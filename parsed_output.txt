@@ -1,0 +1,11 @@
+GNU Block Array Contents: 
+GNUBlock(block_type='variable', name='multiplier', value='2', label=None, type=None, ref=None)
+GNUBlock(block_type='variable', name='samp_rate', value='32000', label=None, type=None, ref=None)
+GNUBlock(block_type='blocks_multiply_xx', name='blocks_multiply_xx_0', value=None, label=None, type='float', ref=None)
+GNUBlock(block_type='blocks_multiply_xx', name='blocks_multiply_xx_1', value=None, label=None, type='int', ref=None)
+GNUBlock(block_type='redhawk_integration_redhawk_sink', name='redhawk_integration_redhawk_sink_0', value=None, label=None, type='int', ref=None)
+GNUBlock(block_type='redhawk_integration_redhawk_source', name='redhawk_integration_redhawk_source_0', value=None, label=None, type='int', ref=None)
+GNUBlock(block_type='redhawk_integration_redhawk_source', name='redhawk_integration_redhawk_source_1', value=None, label=None, type='float', ref=None)
+GNUBlock(block_type='redhawk_integration_redhawk_source', name='redhawk_integration_redhawk_source_2', value=None, label=None, type='float', ref=None)
+
+Properties Array Contents: 
