@@ -125,20 +125,18 @@ class PythonFormatter(object):
         # This for loop iterates through the second set of regular expressions
         # and replaces the matches with similar strings of the correct format.
         # To account for the possibility of multiple source or sink blocks
-        # being present within any given FlowGraph, I added conditional
-        # statements within the loop to hold the current search position, then
-        # iterate a second time through the same file string looking exclusively
-        # for the source/sink block code. This is nescessary because for better
-        # or for worse, the regular expression replacements are set up to be
-        # executed linearly since the generated files follow a general format.
+        # being present within any given FlowGraph, I implemented helper
+        # functions for the built in re.sub method, which will search for
+        # all occurances of my specified string within the file's text, and
+        # call the helper method for each occurrance found. The helper methods
+        # then simply format the captured regular expression groups how we would
+        # like, and return them to be substituted back into the file's text.
         # ######################################################################
         for pair in subarr:
 
             if "source" in pair.match:
-                s = re.search(pair[0], in_string)
-                in_string = re.sub(pair[0], self.sourcerepl(s), in_string)
+                in_string = re.sub(pair[0], self.sourcerepl, in_string)
             elif "sink" in pair.match:
-                s = re.search(pair[0], in_string)
                 in_string = re.sub(pair[0], self.sinkrepl, in_string)
             else:
                 in_string = re.sub(pair[0], pair[1], in_string)
@@ -178,9 +176,11 @@ class PythonFormatter(object):
 
 #   replacement="self.redhawk_integration_redhawk_sink_0 = redhawk_integration_python.redhawk_sink( naming_context_ior, corba_namespace_name,"))
     def sourcerepl(self, matchobj):
+        print ("Source")
         return "self.redhawk_integration_redhawk_source_" + matchobj.group(1) + " = redhawk_integration_python.redhawk_source( naming_context_ior, corba_namespace_name, " + matchobj.group(2) + ", " + matchobj.group(3) + ")"
 
     def sinkrepl(self, matchobj):
+        print ("Sink")
         return "self.redhawk_integration_redhawk_sink_" + matchobj.group(1) + " = redhawk_integration_python.redhawk_sink( naming_context_ior, corba_namespace_name, " + matchobj.group(2) + ")"
 
 
