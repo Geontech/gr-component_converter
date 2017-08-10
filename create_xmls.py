@@ -16,6 +16,11 @@ from collections import namedtuple
 from ossie import version
 from ossie.parsers import scd
 from redhawk.packagegen.resourcePackage import ResourcePackage
+from redhawk.packagegen.softPackage import SoftPackage
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# from redhawk.codegen.model.softpkg import SoftPkg
+# from redhawk.codegen.jinja.python.component.gr_flowgraph import PullComponentGenerator
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 SInterface = namedtuple("SInterface", "name id inherits")
 
@@ -51,7 +56,10 @@ def formatSCD(rp, sources, sinks):
     rp.scd.set_componentfeatures(sup_interfaces)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+    ports_data = []
+
     for idx, block in enumerate(sources):
+
         data_type = "data" + str(block.type).capitalize()
 
         if len(sources) > 1:
@@ -59,10 +67,13 @@ def formatSCD(rp, sources, sinks):
         else:
             new_name = data_type + "_in"
 
+        ports_data.append((block.name, new_name))
+
         new_type = "IDL:BULKIO/%s:1.0" % data_type
         rp.addProvidesPort(new_name, new_type)
 
     for idx, block in enumerate(sinks):
+
         data_type = "data" + str(block.type).capitalize()
 
         if len(sinks) > 1:
@@ -70,9 +81,12 @@ def formatSCD(rp, sources, sinks):
         else:
             new_name = data_type + "_out"
 
+        ports_data.append((block.name, new_name))
+
         new_type = "IDL:BULKIO/%s:1.0" % data_type
         rp.addUsesPort(new_name, new_type)
 
+    return ports_data
 
 # ##############################################################################
 # This method creates a simpleProperty object fo        print "\n"r each variable block that
@@ -98,6 +112,13 @@ def formatSCD(rp, sources, sinks):
 # ##############################################################################
 def formatPRF(rp, props):
 
+    # ##########################################################################
+    # I'm not sure how much of a resource difference it would make (probably
+    # minimal), but if I were to redefine props[i].name to be "new_id", the
+    # entire namedTuple will be recreated since it is immutable. I only mention
+    # this because currently the "gr::" and "gr_" are being appended to this
+    # value at two different places in this code scheme ("jinja_file_edits.py").
+    # ##########################################################################
     for i in range(0, len(props)):
         new_id = "gr::" + props[i].name
         new_name = "gr_" + props[i].name
@@ -136,11 +157,18 @@ def formatSPD(rp, grc_input):
 # ##############################################################################
 def main(name, implementation, outputDir, generator, prop_array, source_types, sink_types, grc_input, py_file_path):
 
+    # sp = SoftPackage(name, implementation, outputDir)
+    # sp._createWavedevContent(generator)
+
     rp = ResourcePackage(name, implementation, outputDir, generator)
     formatSPD(rp, grc_input)
     formatPRF(rp, prop_array)
-    formatSCD(rp, source_types, sink_types)
+    ports_data = formatSCD(rp, source_types, sink_types)
 
     rp.writeXML()
-    rp.callCodegen() #Generates remaining nescessary files
-    subprocess.call(["mv", py_file_path, rp.autotoolsDir])
+
+    # rp.callCodegen(force=True) #Generates remaining nescessary files
+    # subprocess.call(["mv", py_file_path, rp.autotoolsDir])
+    # subprocess.call(["sed", "-i", ""])
+
+    return {'rp': rp, 'pd': ports_data}

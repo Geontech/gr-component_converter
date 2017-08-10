@@ -176,11 +176,9 @@ class PythonFormatter(object):
 
 #   replacement="self.redhawk_integration_redhawk_sink_0 = redhawk_integration_python.redhawk_sink( naming_context_ior, corba_namespace_name,"))
     def sourcerepl(self, matchobj):
-        print ("Source")
         return "self.redhawk_integration_redhawk_source_" + matchobj.group(1) + " = redhawk_integration_python.redhawk_source( naming_context_ior, corba_namespace_name, " + matchobj.group(2) + ", " + matchobj.group(3) + ")"
 
     def sinkrepl(self, matchobj):
-        print ("Sink")
         return "self.redhawk_integration_redhawk_sink_" + matchobj.group(1) + " = redhawk_integration_python.redhawk_sink( naming_context_ior, corba_namespace_name, " + matchobj.group(2) + ")"
 
 

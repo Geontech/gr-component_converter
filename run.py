@@ -8,16 +8,22 @@
 # Created: Wed July 13 10:00:00 2017
 ##################################################
 
+import create_xmls as cx
+import jinja_file_edits as jfe
 import sys
 import re
 import os
 import subprocess
 from xml_parsing import XMLParsing
 from python_formatter import PythonFormatter
-import create_xmls as cx
 # from create_xmls import CreateXMLs
 # from redhawk.packagegen.softPackage import SoftPackage
 # from redhawk.packagegen.resourcePackage import ResourcePackage
+
+class TemplateBuildingInformation(object):
+
+    def __init__(self, parsed_grc_file):
+        self.parsed_grc_name = parsed_grc_file.python_file_name
 
 # ##############################################################################
 # This file is passed the name of a GRC file via command line argument, which
@@ -31,6 +37,8 @@ import create_xmls as cx
 # TODO: Add features for --help. For example, allow --directory flag for
 #       providing a user defined output directory
 
+def get_parsed_grc_name():
+    return self.parsed_grc_name
 
 def main():
 
@@ -122,9 +130,22 @@ def main():
 
     trimmed_grc_name = grc_name.split(".")[0]                                   # Consider changing this name since it may get confusing
 
-    cx.main(trimmed_grc_name, "python", output_dir,
-        "python.component.pull", parsed_grc.properties_array,
+
+    # ##########################################################################
+    # TODO: THIS IS HARDCODED FOR TESTING AND WILL NEED TO BE CHANGEd!!!!!!!!!!!
+    # ##########################################################################
+    generator = "python.component.gr_flowgraph"
+    # old_generator = "python.component.pull"
+
+    respkg = cx.main(trimmed_grc_name, "python", output_dir,
+        generator, parsed_grc.properties_array,
         parsed_grc.source_types, parsed_grc.sink_types, grc_input, py_path)
+
+    jfe.main(respkg["rp"].autotoolsDir, parsed_grc.python_file_name, trimmed_grc_name, parsed_grc.properties_array, respkg["rp"], respkg["pd"])
+
+    respkg["rp"].callCodegen(force=True) #Generates remaining nescessary files
+
+    subprocess.call(["mv", py_path, respkg["rp"].autotoolsDir])
 
     # ##########################################################################
     # TODO: Consider placing the XML creation before the python file creation
