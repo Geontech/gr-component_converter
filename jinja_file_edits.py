@@ -62,6 +62,7 @@ def modify_resource(py_file, py_name, properties, ports_data):
 
         if properties:
             f.write("\n#{% block addpropertychangelisteners %}\n")              # Watch out for the needed newline at the beginning of the string here or Jinja will blow up
+            f.write("def constructor(self):\n")
 
             for prop in properties:
                 count += 1                                                      # I don't know of a way to correct tab formatting, so I'm doing this for now
@@ -113,15 +114,9 @@ def format_property_change_listeners(prop, f, count):
     # First iteration, first statement of propertychangelisteners gets tabbed,
     # all subsequent lines do not, and correct formatting needs to be maintained
     # so this conditional and the followed tabbed statement are necessary.
-    #
-    # TODO: Test this formatting with a Flow Graph that contains more than one
-    #       property to ensure correct formatting is retained.
     # ##########################################################################
-    if count != 1:
-        f.write("        self.addPropertyChangeListener(\'%s\', self.%s)\n" % (new_id, property_changed))
-    else:
-        f.write("self.addPropertyChangeListener(\'%s\', self.%s)\n" % (new_id, property_changed))
 
+    f.write("        self.addPropertyChangeListener(\'%s\', self.%s)\n" % (new_id, property_changed))
     f.write("        self.%s(\'%s\', 0, self.%s)\n" % (property_changed, new_id, new_name))
 
 def format_property_changed(prop, f, count):
@@ -130,13 +125,20 @@ def format_property_changed(prop, f, count):
     property_changed = new_name + "_changed"
 
     if count != 1:
-        f.write("        def %s(self, id, old_value, new_value):\n\n" % property_changed)
+        f.write("        def %s(self, id, old_value, new_value):\n" % property_changed)
     else:
-        f.write("def %s(self, id, old_value, new_value):\n\n" % property_changed)
+        f.write("def %s(self, id, old_value, new_value):\n" % property_changed)
 
     f.write("        self.tb.set_%s(new_value)\n" % prop.name)
     f.write("        self.%s = self.tb.get_%s()\n" % (new_name, prop.name))
 
+
+# ##############################################################################
+# TODO: I worry that the second passed variable into the 3rd f.write statement
+#       ("f.write("            return self.tb.%s.getPort(\"%s\")\n" % (port[0],
+#       port[1]))") may not be correct. Judging from Drew's files, this is my
+#       best geuss if you will.
+# ##############################################################################
 def format_ports_data(port, f, count):
 
     if count != 1:

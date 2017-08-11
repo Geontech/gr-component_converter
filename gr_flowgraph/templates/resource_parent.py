@@ -44,10 +44,8 @@ class ${className}(${baseClass}):
         # Base class init
         ${baseClass}.__init__(self, identifier, execparams)
 
-    def constructor(self):
-
-        #{% block addpropertychangelisteners %}
-        #{% endblock %}
+    #{% block addpropertychangelisteners %}
+    #{% endblock %}
 
     #{% block propertychanged %}
     #{% endblock %}
