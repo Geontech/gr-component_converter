@@ -54,39 +54,6 @@ import sys
 import subprocess
 from collections import namedtuple
 
-# ##############################################################################
-# These regexps will be used to completely remove sections/lines of the
-# given python file without replacing.
-# ##############################################################################
-regexp = []
-regexp.append(re.compile(r"if __name__ == '__main__':.*print \"Warning: failed to XInitThreads\(\)\"", re.S))
-regexp.append(re.compile(r"from PyQt4 import Qt"))
-regexp.append(re.compile(r"import sys"))
-regexp.append(re.compile(r"from gnuradio import qtgui"))
-regexp.append(re.compile(r"\s*Qt.QWidget.__init__\(self\).*self.restoreGeometry\(self.settings.value\(\"geometry\"\).toByteArray\(\)\)", re.S))
-regexp.append(re.compile(r"\s*def closeEvent\(self, event\):.*event.accept\(\)", re.S))
-regexp.append(re.compile(r"\s*from distutils.version import StrictVersion.*qapp = Qt.QApplication\(sys\.argv\)", re.S))
-regexp.append(re.compile(r"\s*def quitting\(\):.*qapp.exec_\(\)", re.S))
-total_len = len(regexp)
-
-# ##############################################################################
-# Here I defined a namedTuple type that contains the regular expression to
-# search for, and the string that it will be replaced with. I also defined an
-# array to store and easily iterate over the tuples once nescessary.
-# ##############################################################################
-subarr = []
-Sub = namedtuple("SubPair", "match replacement")
-subarr.append(Sub(match=r"class top_block\(.*\):", replacement="class top_block(gr.top_block):"))
-subarr.append(Sub(match=r"def __init__\(.*\):", replacement="def __init__(self, naming_context_ior, corba_namespace_name):"))
-subarr.append(Sub(match=r"self.redhawk_integration_redhawk_source_([0-9]+) = redhawk_integration_python.redhawk_source\('', '', (.*), (.*)\)",
-    replacement=None))
-subarr.append(Sub(match=r"self.redhawk_integration_redhawk_sink_([0-9]+) = redhawk_integration_python.redhawk_sink\('', '', (.*)\)",
-    replacement=None))
-# subarr.append(Sub(match=r"self.redhawk_integration_redhawk_source_0 = redhawk_integration_python.redhawk_source\('', '',",
-#     replacement="self.redhawk_integration_redhawk_source_0 = redhawk_integration_python.redhawk_source( naming_context_ior, corba_namespace_name,"))
-# subarr.append(Sub(match=r"self.redhawk_integration_redhawk_sink_0 = redhawk_integration_python.redhawk_sink\('', '',",
-#     replacement="self.redhawk_integration_redhawk_sink_0 = redhawk_integration_python.redhawk_sink( naming_context_ior, corba_namespace_name,"))
-subarr.append(Sub(match=r"tb.show\(\)", replacement="tb.wait()"))
 
 class PythonFormatter(object):
 
@@ -96,6 +63,36 @@ class PythonFormatter(object):
         self.trimmed = trimmed_file_name
 
     def format(self):
+
+        # ##############################################################################
+        # These regexps will be used to completely remove sections/lines of the
+        # given python file without replacing.
+        # ##############################################################################
+        regexp = []
+        regexp.append(re.compile(r"if __name__ == '__main__':.*print \"Warning: failed to XInitThreads\(\)\"", re.S))
+        regexp.append(re.compile(r"from PyQt4 import Qt"))
+        regexp.append(re.compile(r"import sys"))
+        regexp.append(re.compile(r"from gnuradio import qtgui"))
+        regexp.append(re.compile(r"\s*Qt.QWidget.__init__\(self\).*self.restoreGeometry\(self.settings.value\(\"geometry\"\).toByteArray\(\)\)", re.S))
+        regexp.append(re.compile(r"\s*def closeEvent\(self, event\):.*event.accept\(\)", re.S))
+        regexp.append(re.compile(r"\s*from distutils.version import StrictVersion.*qapp = Qt.QApplication\(sys\.argv\)", re.S))
+        regexp.append(re.compile(r"\s*def quitting\(\):.*qapp.exec_\(\)", re.S))
+        total_len = len(regexp)
+
+        # ##############################################################################
+        # Here I defined a namedTuple type that contains the regular expression to
+        # search for, and the string that it will be replaced with. I also defined an
+        # array to store and easily iterate over the tuples once nescessary.
+        # ##############################################################################
+        subarr = []
+        Sub = namedtuple("SubPair", "match replacement")
+        subarr.append(Sub(match=r"class top_block\(.*\):", replacement="class top_block(gr.top_block):"))
+        subarr.append(Sub(match=r"def __init__\(.*\):", replacement="def __init__(self, naming_context_ior, corba_namespace_name):"))
+        subarr.append(Sub(match=r"self.redhawk_integration_redhawk_source_([0-9]+) = redhawk_integration_python.redhawk_source\('', '', (.*), (.*)\)",
+        replacement=None))
+        subarr.append(Sub(match=r"self.redhawk_integration_redhawk_sink_([0-9]+) = redhawk_integration_python.redhawk_sink\('', '', (.*)\)",
+        replacement=None))
+        subarr.append(Sub(match=r"tb.show\(\)", replacement="tb.wait()"))
 
         in_string = ""
         out_string = ""

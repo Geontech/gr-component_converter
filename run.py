@@ -10,47 +10,30 @@
 
 import create_xmls as cx
 import jinja_file_edits as jfe
-import sys
-import re
 import os
+import re
 import subprocess
-from xml_parsing import XMLParsing
+import sys
 from python_formatter import PythonFormatter
-# from create_xmls import CreateXMLs
-# from redhawk.packagegen.softPackage import SoftPackage
-# from redhawk.packagegen.resourcePackage import ResourcePackage
-
-class TemplateBuildingInformation(object):
-
-    def __init__(self, parsed_grc_file):
-        self.parsed_grc_name = parsed_grc_file.python_file_name
+from xml_parsing import XMLParsing
 
 # ##############################################################################
-# This file is passed the name of a GRC file via command line argument, which
-# is then used to create an XMLParsing object. From there, the "parse()" methods
-# is invoked on that object which extracts relevent information from the file
-# and returns a namedTuple of data for easy iteration.
-# ##############################################################################
-
-# TODO: Investigate this link on multiple regexps: https://stackoverflow.com/questions/597476/how-to-concisely-cascade-through-multiple-regex-statements-in-python
-
 # TODO: Add features for --help. For example, allow --directory flag for
-#       providing a user defined output directory
-
-def get_parsed_grc_name():
-    return self.parsed_grc_name
-
+#       providing a user defined output directory (OPTPARSE)
+#
+# Optional TODO's if Time Exists:
+#
+# TODO : Add option for creating the output_dir path if it does not exist.
+#
+# TODO: Change sys.exit to a astdError output so that the message will
+#       be red and bolded.
+# ##############################################################################
 def main():
 
     # ##########################################################################
     # This section is used to perform checks on user provided command-line
     # inputs to make sure that they exist, and that the passed file is of the
     # correct type. If not, the program exits with an appropriate message.
-    #
-    # TODO: Change sys.exit to a astdError output so that the message will
-    #       be red and bolded.
-    #
-    # TODO: Add option for creating the output_dir path if it does not exist
     # ##########################################################################
 
     grc_input = os.path.abspath(sys.argv[1])
@@ -79,8 +62,10 @@ def main():
 
 
     # ##########################################################################
-    # This is where the automation/scripting for the various componenets
-    # begins its execution.
+    # Where the tooling officially begins. This section specifically creates
+    # the "parsed_grc" object which in short, extracts all useful information
+    # from the user passed grc file, and gives options to create and array of
+    # determined properties, and find the input/output types of ports.
     # ##########################################################################
 
     parsed_grc = XMLParsing(grc_input)
@@ -88,51 +73,39 @@ def main():
     parsed_grc.create_properties_array()
     parsed_grc.find_inout_types()
 
-    # ##########################################################################
-    # Create a file to output GNUBlock information for use with comparisons
-    # ##########################################################################
-
-    subprocess.call(["touch", "parsed_output.txt"])
-    with open("parsed_output.txt", "w") as out_file:
-        out_file.write("GNU Block Array Contents: \n")
-        for block in parsed_grc.block_array:
-            out_file.write(str(block) + "\n")
-        out_file.write("\nProperties Array Contents: \n")
-        for block in parsed_grc.properties_array:
-            out_file.write(str(block) + "\n")
-
-    # Creating the names of two temporary files to be created by shell script
-    temp_file_name = parsed_grc.python_file_name.rstrip(".py")
+    temp_file_name = parsed_grc.python_file_name.rstrip(".py")                  # Defining the names of two temporary files to be created by shell script
     trimmed_file_name = temp_file_name + "_trimmed"
 
     subprocess.call(["./grc_to_py.sh", grc_input, parsed_grc.python_file_name,
         output_dir, temp_file_name, trimmed_file_name])
 
-
-    # ##########################################################################
-    # This conditional statement determines the form of the user passed output
-    # directory, so that the "python_file_name" can be correctly appended
-    # for later reference.
-    #
-    # TODO: Find a cleaner way to go about the first "if" clause.
-    # ##########################################################################
-
     py_path = output_dir + "/" + parsed_grc.python_file_name
     tmp_path = output_dir + "/" + temp_file_name
     trim_path = output_dir + "/" + trimmed_file_name
 
+    # ##########################################################################
+    # Creates and appropriately formats the generated "top_block.py" file (or
+    # equivalent GRC generated python file) for use at a later time.
+    # ##########################################################################
     pf = PythonFormatter(py_path, tmp_path, trim_path)
     pf.format()
 
-    # ##########################################################################
-    # TODO: Write description for XML creation stage using appropriate language
-    # ##########################################################################
-
-    trimmed_grc_name = grc_name.split(".")[0]                                   # Consider changing this name since it may get confusing
-
+    trimmed_grc_name = grc_name.split(".")[0]
 
     # ##########################################################################
-    # TODO: THIS IS HARDCODED FOR TESTING AND WILL NEED TO BE CHANGEd!!!!!!!!!!!
+    # This section of code calls the main method of the "create_xmls.py" file
+    # which in turn creates the three necessary XML files, and stores the
+    # created resourcePackage object in the "respkg" variable. Then, the
+    # jinja template files are created using parsed information, and codegen
+    # is called on the jinja template result. Finally, there is a one line
+    # modification to the created "Makefile.am.ide" file, followed by a shell
+    # process that moves the "top_block.py" (or similar) file inside the
+    # newly generated directory.
+    #
+    # TODO: This generator variable may need to be changed depending on what the
+    #       actual implementation name of that directory will become, or if it
+    #       will actually be present in redhawk's "pull" template, then you can
+    #       make use of the commented "old_generator" variable below.
     # ##########################################################################
     generator = "python.component.gr_flowgraph"
     # old_generator = "python.component.pull"
@@ -141,21 +114,13 @@ def main():
         generator, parsed_grc.properties_array,
         parsed_grc.source_types, parsed_grc.sink_types, grc_input, py_path)
 
-    jfe.main(respkg["rp"].autotoolsDir, parsed_grc.python_file_name, trimmed_grc_name, parsed_grc.properties_array, respkg["rp"], respkg["pd"])
+    jfe.main(parsed_grc.python_file_name, trimmed_grc_name, parsed_grc.properties_array, respkg["pd"])
 
     respkg["rp"].callCodegen(force=True) #Generates remaining nescessary files
 
-    subprocess.call(["mv", py_path, respkg["rp"].autotoolsDir])
+    jfe.modify_make_am_ide(respkg["rp"].autotoolsDir, parsed_grc.python_file_name)
 
-    # ##########################################################################
-    # TODO: Consider placing the XML creation before the python file creation
-    #       and formatting so that we can avoid the unnescessary moving of the
-    #       python file into the xml/python folder, and just have it created
-    #       there from the beginning. CANNOT MOVE UNLESS callCodegen() WAS
-    #       CALLED!
-    #       < xml_dir = output_dir + "/" + trimmed_grc_name + "/python" >
-    #       < subprocess.call(["mv", py_path, xml_dir]) >
-    # ##########################################################################
+    subprocess.call(["mv", py_path, respkg["rp"].autotoolsDir])
 
 if __name__ == '__main__':
     main()

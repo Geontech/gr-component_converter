@@ -17,10 +17,6 @@ from ossie import version
 from ossie.parsers import scd
 from redhawk.packagegen.resourcePackage import ResourcePackage
 from redhawk.packagegen.softPackage import SoftPackage
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# from redhawk.codegen.model.softpkg import SoftPkg
-# from redhawk.codegen.jinja.python.component.gr_flowgraph import PullComponentGenerator
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 SInterface = namedtuple("SInterface", "name id inherits")
 
@@ -89,26 +85,9 @@ def formatSCD(rp, sources, sinks):
     return ports_data
 
 # ##############################################################################
-# This method creates a simpleProperty object fo        print "\n"r each variable block that
+# This method creates a simpleProperty object for each variable block that
 # has been determined to be a property (referenced by another variable or block)
 # and formats the name of the property in a required way.
-#
-# TODO: Determine if kindtypes should be set to "property" or let it
-#       remain as its default "configure" value. ("property" in Drew's).
-#
-# TODO: Determine if the "name" property component is required for the
-#       creation of a SimpleProperty (present in Drew's, not in current)
-#
-# TODO: Determine if any other "properties" should be modified from the
-#       original generated version of the XML
-#
-# TODO: If yes, should it be changed to "2.0.5" as in Drew's example,
-#       or should it be changed to "2.0.6" if our version is being
-#       patched.
-#       < self.rp.spd.set_type("2.0.5")
-#
-# TODO: Determine the purpose/use of the "aepcompliance" section, and
-#       if it should be kept or removed.
 # ##############################################################################
 def formatPRF(rp, props):
 
@@ -117,7 +96,8 @@ def formatPRF(rp, props):
     # minimal), but if I were to redefine props[i].name to be "new_id", the
     # entire namedTuple will be recreated since it is immutable. I only mention
     # this because currently the "gr::" and "gr_" are being appended to this
-    # value at two different places in this code scheme ("jinja_file_edits.py").
+    # value at two different places in this code scheme, "jinja_file_edits.py"
+    # being the other.
     # ##########################################################################
     for i in range(0, len(props)):
         new_id = "gr::" + props[i].name
@@ -157,18 +137,11 @@ def formatSPD(rp, grc_input):
 # ##############################################################################
 def main(name, implementation, outputDir, generator, prop_array, source_types, sink_types, grc_input, py_file_path):
 
-    # sp = SoftPackage(name, implementation, outputDir)
-    # sp._createWavedevContent(generator)
-
     rp = ResourcePackage(name, implementation, outputDir, generator)
     formatSPD(rp, grc_input)
     formatPRF(rp, prop_array)
     ports_data = formatSCD(rp, source_types, sink_types)
 
     rp.writeXML()
-
-    # rp.callCodegen(force=True) #Generates remaining nescessary files
-    # subprocess.call(["mv", py_file_path, rp.autotoolsDir])
-    # subprocess.call(["sed", "-i", ""])
 
     return {'rp': rp, 'pd': ports_data}

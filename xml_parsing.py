@@ -13,11 +13,6 @@ import sys
 from array import array
 from collections import namedtuple
 import xml.etree.ElementTree as ET
-# import numpy as np
-
-# ##############################################################################
-# Other written methods for isolating values can be found in the "temp.txt" file
-# ##############################################################################
 
 GNUBlock = namedtuple("GNUBlock", "block_type name value label type ref")
 RHBlock = namedtuple("RHBlock", "name type")
@@ -38,15 +33,15 @@ class XMLParsing(object):
         self.io_type = ""
 
 
-    # ##############################################################################
+    # ##########################################################################
     # This method is responsible for iterating through the provided XML file and
     # identifying the block type, name, value, label, data type, and references
-    # if relevent. This information is stored in a 2D array with headers based on
-    # found <block>s that are not the very first block occurrance (since that first
-    # block only contains setup information). Empty fields are then filled with
-    # the value, "None". Then, the array is converted into the namedTuple type
-    # "GNUBlock" for easy iteration, and will be used to populate xml files.
-    # ##############################################################################
+    # if relevent. This information is stored in a 2D array with headers based
+    # on found <block>s that are not the very first block occurrance (since that
+    # first block only contains setup information). Empty fields are then filled
+    # with the value, "None". Then, the array is converted into the namedTuple
+    # type "GNUBlock" for easy iteration and will be used to populate xml files.
+    # ##########################################################################
     def parse(self):
 
         for block in self.root.findall('block'):
@@ -62,14 +57,14 @@ class XMLParsing(object):
 
               if enabled == "True":
 
-                  self.block_count += 1                                         # which is essentially the background information stored in the "top_block" block (Top left) of the FG
+                  self.block_count += 1
                   self.temp_arr.append([])
                   self.temp_arr[self.block_count].append(gnublk)
 
                   for i in range(0, 5):                                         # Adding blank array positions under each block header for correct insertion of attributes
                       self.temp_arr[self.block_count].append([])
 
-                  self.temp_arr[self.block_count][5] = None                     # Default reference to None until found otherwise
+                  self.temp_arr[self.block_count][5] = None
 
                   for param in block.findall('param'):
 
@@ -96,19 +91,14 @@ class XMLParsing(object):
                   if key == "id":
                       self.python_file_name = param.find('value').text + ".py"
 
-
               self.first_iteration = False
 
         for i in range(0, len(self.temp_arr)):
-
-            # if self.temp_arr[i][0] == "variable":
-            #     self.temp_arr[i][4] = "raw"
 
             # ##################################################################
             # TODO: Determine if the assignment statement below is creating
             #       references or new values. We want new values.
             # ##################################################################
-
             for j in range(0, len(self.temp_arr)):
                 if "variable" in self.temp_arr[i][0] and (self.temp_arr[i][1] ==
                     self.temp_arr[j][2] or self.temp_arr[i][1] == self.temp_arr[j][5]):
