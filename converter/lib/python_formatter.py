@@ -1,5 +1,3 @@
-#!/usr/bin/env python2
-
 ##################################################
 # File: python_formatter.py
 # Author: Chris Conover

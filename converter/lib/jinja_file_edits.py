@@ -1,5 +1,3 @@
-#!/usr/bin/env python2
-
 import subprocess
 from jinja2 import Environment, FileSystemLoader, PackageLoader, Template, tests
 from redhawk.codegen.jinja.environment import CodegenEnvironment

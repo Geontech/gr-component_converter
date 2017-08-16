@@ -1,5 +1,3 @@
-#!/usr/bin/env python2
-
 ##################################################
 # File: xml_parsing.py
 # Author: Chris Conover

@@ -1,5 +1,3 @@
-#!/usr/bin/env python2
-
 ##################################################
 # File: create_xmls.py
 # Author: Chris Conover

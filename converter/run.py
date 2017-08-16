@@ -8,14 +8,15 @@
 # Created: Wed July 13 10:00:00 2017
 ##################################################
 
-import create_xmls as cx
-import jinja_file_edits as jfe
 import os
 import re
 import subprocess
 import sys
-from python_formatter import PythonFormatter
-from xml_parsing import XMLParsing
+
+import lib.create_xmls as cx
+import lib.jinja_file_edits as jfe
+from lib.python_formatter import PythonFormatter
+from lib.xml_parsing import XMLParsing
 
 # ##############################################################################
 # TODO: Add features for --help. For example, allow --directory flag for
@@ -76,7 +77,7 @@ def main():
     temp_file_name = parsed_grc.python_file_name.rstrip(".py")                  # Defining the names of two temporary files to be created by shell script
     trimmed_file_name = temp_file_name + "_trimmed"
 
-    subprocess.call(["./grc_to_py.sh", grc_input, parsed_grc.python_file_name,
+    subprocess.call(["./lib/grc_to_py.sh", grc_input, parsed_grc.python_file_name,
         output_dir, temp_file_name, trimmed_file_name])
 
     py_path = output_dir + "/" + parsed_grc.python_file_name
