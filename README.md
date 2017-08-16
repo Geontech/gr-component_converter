@@ -1,21 +1,57 @@
 # GRC to REDHAWK Component Converter
 
-This tool consists of N stages that ingests a GNURadio `.grc` formatted Flow Graph and outputs a custom REHDAWK Component capable of representing variables and data stream ports using Properties and BULKIO Ports, respectively.  It assumes the GRC has had all UI elements removed and any hardware source/sink requirements have been replaced with references to the `redhawk_source` and `redhawk_sink` blocks.
+This tool ingests a GNURadio Flow Graph (GRC XML) and outputs a custom REHDAWK Component capable of representing variables and data stream ports using Properties and BULKIO Ports, respectively.  The Component can then be included in an arbitrary Waveform and deployed into a network-distributed REDHAWK Domain.
 
-1. User selects implementation type: traditional or Docker (SPD XML)
-2. Transfer the list of variables (names, types) from the GRC to REDHAWK Properties (PRF XML)
-3. Transfer the list of source and sink instances (and data types) from the GRC to REDHAWK BULKIO Ports (SCD XML)
-4. Use REDHAWK code generator and integration template to produce the Component definition
-5. Use GRC to generate the `top_block.py` of the Flow Graph and add it to the Component's sources
+## Flow Graph Requirements
 
-The Component is now ready for use with `gnuradio-redhawk` based on the selected implementation.
+1. Remove and/or disable all UI elements from the Flow Graph.  If you **must** have a display output for a data stream, consider using a `redhawk_sink` block and the plotting capabilities in REDHAWK SDR's IDE or using a web-based solution such as Geon's [REST-Python][rest-python] or REDHAWK SDR's [Enterprise Integration][rei] and a suitable web UI front end.
 
- > **Note:** Use of this repository requires having both REDHAWK and GNURadio installed in the same environment as these tools, as provided by `gnuradio-redhawk`, for example.
+2. Replace any hardware-specific blocks for data ingress and egress with `redhawk_source` and `redhawk_sink` blocks.
 
-## Traditional
+## Tool Requirements
 
-Traditional deployment assumes the integrator has installed GNURadio, Geon's `redhawk_integration_python` package, and all possible Flow Graph assets at every GPP in a given Domain.  This ensures the runtime deployment of the Component can utilize GNURadio and the associated integration source and sink blocks.
+This tool requires that all of the following be installed wherever this tool is run:
 
-## Docker
+ 1. REDHAWK SDR
+ 2. GNURadio
+ 3. [GNURadio REDHAWK Integration Python][gr-rip]
 
-Docker-based deployment of the Component requires a specialized extension to the [REDHAWK GPP](https://github.com/GeonTech/core-framework) which adds a variety of features making it Docker-aware.  It is then up to the integrator to provision the host running the GPP to have the associated Docker images installed or to expose a repository server to that host for on-the-fly pulling of images.
+## Installation
+
+Install the `gr_flowgraph` REDHAWK Component Template using the associated Makefile:
+
+```
+sudo make install
+```
+
+This will load the template into the `OSSIEHOME` Python package for the REDHAWK SDR Code Generator.
+
+## Usage
+
+Assuming your Flow Graph has been configured to [meet the requirements](#flow-graph-requirements), conversion to a REDHAWK Component project is a single step:
+
+```
+./run.py ./path_to/my_flowgraph.grc [./path_to_component]
+```
+
+The location where to store the Component definition is optional; its default is the current working directory.
+
+## Deployment
+
+You can then deploy (install) the Component to the `SDRROOT` as one would any typical REDHAWK Component:
+
+```
+cd COMPONENT_DIRECTORY
+./build.sh
+./build.sh install
+```
+
+ > **Note:** The above assumes that the user running the commands is a member of the `redhawk` group so that the user has write access to the `SDRROOT`.
+
+ > **Important:** The above depends extensively on your deployment scheme.  See the [GNURadio REDHAWK][gr-rh] project for more information.
+
+
+[gr-rh]:       https://github.com/GeonTech/gnuradio-redhawk
+[gr-rip]:      https://github.com/GeonTech/gr-redhawk_integration_python
+[rest-python]: https://github.com/GeonTech/rest-python
+[rei]:         https://github.com/RedhawkSDR/enterprise
