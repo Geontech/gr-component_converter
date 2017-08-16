@@ -25,7 +25,7 @@ from redhawk.codegen.jinja.python import PythonCodeGenerator, PythonTemplate
 from redhawk.codegen.jinja.python.properties import PythonPropertyMapper
 from redhawk.codegen.jinja.python.ports import PythonPortMapper, PythonPortFactory
 
-from mapping import PullComponentMapper
+from mapping import GrFlowGraphComponentMapper
 
 if not '__package__' in locals():
     # Python 2.4 compatibility
@@ -35,7 +35,7 @@ loader = CodegenLoader(__package__,
                        {'common': 'redhawk.codegen.jinja.common',
                         'base':   'redhawk.codegen.jinja.python.component.base'})
 
-class PullComponentGenerator(PythonCodeGenerator):
+class GrFlowGraphComponentGenerator(PythonCodeGenerator):
     # Need to keep auto_start and queued_ports to handle legacy options
     def parseopts (self, auto_start=True, queued_ports=False, legacy_structs=True):
         self.legacy_structs = utils.parseBoolean(legacy_structs)
@@ -44,7 +44,7 @@ class PullComponentGenerator(PythonCodeGenerator):
         return loader
 
     def componentMapper(self):
-        return PullComponentMapper()
+        return GrFlowGraphComponentMapper()
 
     def propertyMapper(self):
         return PythonPropertyMapper(legacy_structs=self.legacy_structs)

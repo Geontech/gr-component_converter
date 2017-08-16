@@ -25,7 +25,7 @@ from redhawk.codegen import libraries
 
 from redhawk.codegen.jinja.mapping import ComponentMapper
 
-class PullComponentMapper(ComponentMapper):
+class GrFlowGraphComponentMapper(ComponentMapper):
     def _mapComponent(self, softpkg):
         pycomp = {}
         pycomp['baseclass'] = self.baseClass(softpkg)
