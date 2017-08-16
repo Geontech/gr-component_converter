@@ -12,11 +12,14 @@ import os
 import re
 import subprocess
 import sys
+import logging
 
 import lib.create_xmls as cx
 import lib.jinja_file_edits as jfe
 from lib.python_formatter import PythonFormatter
 from lib.xml_parsing import XMLParsing
+
+LOGGER_NAME = "GRComponentConverter"
 
 # ##############################################################################
 # TODO: Add features for --help. For example, allow --directory flag for
@@ -29,7 +32,9 @@ from lib.xml_parsing import XMLParsing
 # TODO: Change sys.exit to a astdError output so that the message will
 #       be red and bolded.
 # ##############################################################################
-def main():
+def main(grc_file, destination, options):
+    # Get logger
+    _log = logging.getLogger(LOGGER_NAME)
 
     # ##########################################################################
     # This section is used to perform checks on user provided command-line
@@ -37,31 +42,32 @@ def main():
     # correct type. If not, the program exits with an appropriate message.
     # ##########################################################################
 
-    grc_input = os.path.abspath(sys.argv[1])
+    grc_input = os.path.abspath(grc_file)
+    _log.debug("GRC Location: {0}".format(grc_input))
 
     # Determine if the user provided an output_dir arg, if not, default to "."
-    if len(sys.argv) == 3:
-        output_dir = os.path.abspath(sys.argv[2])
-    else:
-        output_dir = os.path.abspath("./")
+    output_dir = os.path.abspath(destination)
+    _log.debug("Destination:  {0}".format(output_dir))
 
     grc_exists = os.path.exists(grc_input)
     output_dir_exists = os.path.isdir(output_dir)
 
     if not grc_exists:
-        sys.exit("Error: Provided file does not exist. Exiting.")
+        _log.error("Provided file does not exist.")
+        sys.exit(1)
     elif not output_dir_exists:
-        sys.exit("Error: Provided output directory does not exist. Exiting.")
+        _log.error("Provided output directory does not exist.")
+        sys.exit(1)
 
     # Extract only the name of the GRC file from the entire absolute path
     temp = grc_input.rfind("/")
     grc_name = grc_input[temp+1:]
 
     if ".grc" not in grc_name:
-        sys.exit("A GNU Radio \".grc\" file was expected, but was not provided."
-            + " Exiting.")
+        _log.error("A GNU Radio \".grc\" file was expected, but was not provided.")
+        sys.exit(1)
 
-
+    sys.exit(0)
     # ##########################################################################
     # Where the tooling officially begins. This section specifically creates
     # the "parsed_grc" object which in short, extracts all useful information
@@ -109,7 +115,6 @@ def main():
     #       make use of the commented "old_generator" variable below.
     # ##########################################################################
     generator = "python.component.gr_flowgraph"
-    # old_generator = "python.component.pull"
 
     respkg = cx.main(trimmed_grc_name, "python", output_dir,
         generator, parsed_grc.properties_array,
@@ -123,5 +128,34 @@ def main():
 
     subprocess.call(["mv", py_path, respkg["rp"].autotoolsDir])
 
+
+
 if __name__ == '__main__':
-    main()
+    from optparse import OptionParser
+    parser = OptionParser()
+    parser.usage = "%prog [options] GRC_FILE [DESTINATION]"
+    parser.add_option(
+        "-v", "--verbose",
+        help="Enable verbose logging",
+        dest="verbose",
+        default=False,
+        action="store_true")
+    (options, args) = parser.parse_args()
+
+    # Setup logging
+    logging.basicConfig(format='%(name)-12s:%(levelname)-8s: %(message)s', level=logging.INFO)
+    if options.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+    _log = logging.getLogger(LOGGER_NAME)
+
+    num_args = len(args)
+    if num_args == 0:
+        _log.error("Must specify the location of a GRC file")
+        sys.exit(1)
+
+    grc_file = args[0]
+    destination = './'
+    if num_args == 2:
+        destination = args[1]
+
+    main(grc_file, destination, options)
