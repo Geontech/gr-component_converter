@@ -67,7 +67,6 @@ def main(grc_file, destination, options):
         _log.error("A GNU Radio \".grc\" file was expected, but was not provided.")
         sys.exit(1)
 
-    sys.exit(0)
     # ##########################################################################
     # Where the tooling officially begins. This section specifically creates
     # the "parsed_grc" object which in short, extracts all useful information
