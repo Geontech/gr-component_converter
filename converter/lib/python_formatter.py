@@ -61,22 +61,6 @@ class PythonFormatter(object):
         self.trimmed = trimmed_file_name
 
     def format(self):
-
-        # ##############################################################################
-        # These regexps will be used to completely remove sections/lines of the
-        # given python file without replacing.
-        # ##############################################################################
-        regexp = []
-        regexp.append(re.compile(r"if __name__ == '__main__':.*print \"Warning: failed to XInitThreads\(\)\"", re.S))
-        regexp.append(re.compile(r"from PyQt4 import Qt"))
-        regexp.append(re.compile(r"import sys"))
-        regexp.append(re.compile(r"from gnuradio import qtgui"))
-        regexp.append(re.compile(r"\s*Qt.QWidget.__init__\(self\).*self.restoreGeometry\(self.settings.value\(\"geometry\"\).toByteArray\(\)\)", re.S))
-        regexp.append(re.compile(r"\s*def closeEvent\(self, event\):.*event.accept\(\)", re.S))
-        regexp.append(re.compile(r"\s*from distutils.version import StrictVersion.*qapp = Qt.QApplication\(sys\.argv\)", re.S))
-        regexp.append(re.compile(r"\s*def quitting\(\):.*qapp.exec_\(\)", re.S))
-        total_len = len(regexp)
-
         # ##############################################################################
         # Here I defined a namedTuple type that contains the regular expression to
         # search for, and the string that it will be replaced with. I also defined an
@@ -86,35 +70,11 @@ class PythonFormatter(object):
         Sub = namedtuple("SubPair", "match replacement")
         subarr.append(Sub(match=r"class top_block\(.*\):", replacement="class top_block(gr.top_block):"))
         subarr.append(Sub(match=r"def __init__\(.*\):", replacement="def __init__(self, naming_context_ior, corba_namespace_name):"))
-        subarr.append(Sub(match=r"self.redhawk_integration_redhawk_source_([0-9]+) = redhawk_integration_python.redhawk_source\('', '', (.*), (.*)\)",
-        replacement=None))
-        subarr.append(Sub(match=r"self.redhawk_integration_redhawk_sink_([0-9]+) = redhawk_integration_python.redhawk_sink\('', '', (.*)\)",
-        replacement=None))
-        subarr.append(Sub(match=r"tb.show\(\)", replacement="tb.wait()"))
 
         in_string = ""
-        out_string = ""
-
         with open(self.pfp, "r") as input_file:
-
             in_string = input_file.read()
             comp_string = in_string
-
-        # ######################################################################
-        # This for loop iterates through the first list of regexps, matches them
-        # to a string extraction of the GRC generated python file, then replaces
-        # all matches with newlines which are later trimmed by an auxilary
-        # method (since I don't believe you can simply substitute empty strings)
-        # ######################################################################
-        for expression in regexp:
-
-            in_string = re.sub(expression, "\n", in_string)
-
-            if self.changed(in_string, comp_string):
-                comp_string = in_string
-            else:
-                sys.exit("Error: Incorrect GNU Radio Flowgraph format. Please refer to documentation for FG specifications.")
-
 
         # ######################################################################
         # This for loop iterates through the second set of regular expressions
@@ -128,21 +88,16 @@ class PythonFormatter(object):
         # like, and return them to be substituted back into the file's text.
         # ######################################################################
         for pair in subarr:
+            in_string = re.sub(pair[0], pair[1], in_string)
 
-            if "source" in pair.match:
-                in_string = re.sub(pair[0], self.sourcerepl, in_string)
-            elif "sink" in pair.match:
-                in_string = re.sub(pair[0], self.sinkrepl, in_string)
-            else:
-                in_string = re.sub(pair[0], pair[1], in_string)
-
-            if self.changed(in_string, comp_string):
+            if in_string != comp_string:
                 comp_string = in_string
             else:
-                sys.exit("Error: Incorrect GNU Radio Flowgraph format. Please refer to documentation for FG specifications.")
+                # FIXME: make this a log message
+                print "Skipped substitution for: {0}".format(pair[0])
+                # sys.exit("Error: Incorrect GNU Radio Flowgraph format. Please refer to documentation for FG specifications.")
 
-        with open(self.temp, "w") as output_file:
-
+        with open(self.temp, "w+") as output_file:
             output_file.write(in_string)
 
         self.trim_blank_lines()
@@ -155,35 +110,13 @@ class PythonFormatter(object):
         subprocess.call(["rm", self.temp])
         subprocess.call(["rm", self.trimmed])
 
-
-    # ##########################################################################
-    # Simply determines if the regular expression substitution succeeded or not.
-    # If not, "False" will be returned, and the main format() function will
-    # throw a error that describes the incorrect situation it has encountered.
-    # ##########################################################################
-    def changed(self, in_string, comp_string):
-
-        if in_string == comp_string:
-            return False
-        else:
-            return True
-
-
-#   replacement="self.redhawk_integration_redhawk_sink_0 = redhawk_integration_python.redhawk_sink( naming_context_ior, corba_namespace_name,"))
-    def sourcerepl(self, matchobj):
-        return "self.redhawk_integration_redhawk_source_" + matchobj.group(1) + " = redhawk_integration_python.redhawk_source( naming_context_ior, corba_namespace_name, " + matchobj.group(2) + ", " + matchobj.group(3) + ")"
-
-    def sinkrepl(self, matchobj):
-        return "self.redhawk_integration_redhawk_sink_" + matchobj.group(1) + " = redhawk_integration_python.redhawk_sink( naming_context_ior, corba_namespace_name, " + matchobj.group(2) + ")"
-
-
     # ##########################################################################
     # Removes excessive white-space lines created by the regular expression
     # substitution method in format().
     # ##########################################################################
     def trim_blank_lines(self):
 
-        with open(self.trimmed, "w") as output_file, open(self.temp, "r") as iter_file:
+        with open(self.trimmed, "w+") as output_file, open(self.temp, "r") as iter_file:
 
             first_space = True
 
