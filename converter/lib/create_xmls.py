@@ -12,7 +12,7 @@ import time
 import uuid
 from collections import namedtuple
 from ossie import version
-from ossie.parsers import scd
+from ossie.parsers import scd, spd
 from redhawk.packagegen.resourcePackage import ResourcePackage
 from redhawk.packagegen.softPackage import SoftPackage
 
@@ -128,18 +128,18 @@ def formatSPD(rp, grc_input, docker_image, docker_volume):
     # Add dependencies for docker_image and docker_volume if specified.
     deps = []
     if docker_image:
-        deps.append(dependency(
+        deps.append(spd.dependency(
             'allocation',
-            propertyRef(
+            propertyref=spd.propertyRef(
                 'DCE:c38d28a6-351d-4aa4-a9ba-3cea51966838',
                 docker_image)
             ))
 
     if docker_volume:
         for vol in docker_volume:
-            deps.append(dependency(
+            deps.append(spd.dependency(
                 'allocation',
-                propertyRef(
+                propertyref=spd.propertyRef(
                     'DCE:47a581c8-e31f-4284-a3ef-6d8b98385835',
                     vol)
                 ))
