@@ -13,18 +13,17 @@ import re
 import subprocess
 import sys
 import logging
+from optparse import OptionParser, OptionGroup
 
 import lib.create_xmls as cx
 import lib.jinja_file_edits as jfe
 from lib.python_formatter import PythonFormatter
 from lib.xml_parsing import XMLParsing
+from lib.grc_to_py import grc_to_py
 
 LOGGER_NAME = "GRComponentConverter"
 
 # ##############################################################################
-# TODO: Add features for --help. For example, allow --directory flag for
-#       providing a user defined output directory (OPTPARSE)
-#
 # Optional TODO's if Time Exists:
 #
 # TODO : Add option for creating the output_dir path if it does not exist.
@@ -67,7 +66,6 @@ def main(grc_file, destination, options):
         _log.error("A GNU Radio \".grc\" file was expected, but was not provided.")
         sys.exit(1)
 
-    sys.exit(0)
     # ##########################################################################
     # Where the tooling officially begins. This section specifically creates
     # the "parsed_grc" object which in short, extracts all useful information
@@ -80,11 +78,10 @@ def main(grc_file, destination, options):
     parsed_grc.create_properties_array()
     parsed_grc.find_inout_types()
 
+    grc_to_py(grc_input, output_dir)
+
     temp_file_name = parsed_grc.python_file_name.rstrip(".py")                  # Defining the names of two temporary files to be created by shell script
     trimmed_file_name = temp_file_name + "_trimmed"
-
-    subprocess.call(["./lib/grc_to_py.sh", grc_input, parsed_grc.python_file_name,
-        output_dir, temp_file_name, trimmed_file_name])
 
     py_path = output_dir + "/" + parsed_grc.python_file_name
     tmp_path = output_dir + "/" + temp_file_name
@@ -108,17 +105,16 @@ def main(grc_file, destination, options):
     # modification to the created "Makefile.am.ide" file, followed by a shell
     # process that moves the "top_block.py" (or similar) file inside the
     # newly generated directory.
-    #
-    # TODO: This generator variable may need to be changed depending on what the
-    #       actual implementation name of that directory will become, or if it
-    #       will actually be present in redhawk's "pull" template, then you can
-    #       make use of the commented "old_generator" variable below.
     # ##########################################################################
-    generator = "python.component.gr_flowgraph"
-
-    respkg = cx.main(trimmed_grc_name, "python", output_dir,
-        generator, parsed_grc.properties_array,
-        parsed_grc.source_types, parsed_grc.sink_types, grc_input, py_path)
+    respkg = cx.main(
+        name =          trimmed_grc_name,
+        output_dir =    output_dir,
+        prop_array =    parsed_grc.properties_array,
+        source_types =  parsed_grc.source_types,
+        sink_types =    parsed_grc.sink_types,
+        grc_input =     grc_input,
+        docker_image =  options.docker_image,
+        docker_volume = options.docker_volume)
 
     jfe.main(parsed_grc.python_file_name, trimmed_grc_name, parsed_grc.properties_array, respkg["pd"])
 
@@ -131,7 +127,7 @@ def main(grc_file, destination, options):
 
 
 if __name__ == '__main__':
-    from optparse import OptionParser
+    # Options parsing
     parser = OptionParser()
     parser.usage = "%prog [options] GRC_FILE [DESTINATION]"
     parser.add_option(
@@ -140,6 +136,24 @@ if __name__ == '__main__':
         dest="verbose",
         default=False,
         action="store_true")
+
+    group = OptionGroup(parser,
+        "Docker-GPP Support",
+        "Note: These options will make your Component require the Docker-GPP!")
+    group.add_option(
+        "--docker-image",
+        help="Docker Image name that will house this component",
+        dest="docker_image",
+        default=None)
+    group.add_option(
+        "--docker-volume",
+        help="Docker Volume required by this component (repeat if multiple)",
+        dest="docker_volume",
+        action="append",
+        type="string",
+        default=None)
+    parser.add_option_group(group)
+
     (options, args) = parser.parse_args()
 
     # Setup logging
@@ -147,6 +161,11 @@ if __name__ == '__main__':
     if options.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
     _log = logging.getLogger(LOGGER_NAME)
+
+    # Validate 
+    if options.docker_volume and not options.docker_image:
+        _log.error("If a volume is specified, then an image must be specified.");
+        sys.exit(1)
 
     num_args = len(args)
     if num_args == 0:
