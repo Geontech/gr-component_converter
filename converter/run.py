@@ -78,7 +78,15 @@ def main(grc_file, destination, options):
     parsed_grc.create_properties_array()
     parsed_grc.find_inout_types()
 
+    # Generates output_dir/<parsed_grc.python_file_name>.py
+    # which may eventually conflict with the base class file name in the 
+    # Component.  We rename it here.
     grc_to_py(grc_input, output_dir)
+    grc_py = 'grc_' + parsed_grc.python_file_name
+    os.rename(
+        os.path.join(output_dir, parsed_grc.python_file_name),
+        os.path.join(output_dir, grc_py))
+    parsed_grc.python_file_name = grc_py
 
     temp_file_name = parsed_grc.python_file_name.rstrip(".py")                  # Defining the names of two temporary files to be created by shell script
     trimmed_file_name = temp_file_name + "_trimmed"
@@ -116,7 +124,7 @@ def main(grc_file, destination, options):
         docker_image =  options.docker_image,
         docker_volume = options.docker_volume)
 
-    jfe.main(parsed_grc.python_file_name, trimmed_grc_name, parsed_grc.properties_array, respkg["pd"])
+    jfe.main(parsed_grc.python_file_name, parsed_grc.python_class_name, trimmed_grc_name, parsed_grc.properties_array, respkg["pd"])
 
     respkg["rp"].callCodegen(force=True) #Generates remaining nescessary files
 
