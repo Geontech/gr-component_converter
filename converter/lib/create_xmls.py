@@ -161,7 +161,7 @@ def main(name, output_dir, prop_array, source_types, sink_types, grc_input, dock
     generator = "python.component.gr_flowgraph"
 
     rp = ResourcePackage(name, implementation, output_dir, generator)
-    formatSPD(rp, grc_input)
+    formatSPD(rp, grc_input, docker_image, docker_volume)
     formatPRF(rp, prop_array)
     ports_data = formatSCD(rp, source_types, sink_types)
 
