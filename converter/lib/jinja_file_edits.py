@@ -1,4 +1,5 @@
 import subprocess
+import os
 from jinja2 import Environment, FileSystemLoader, PackageLoader, Template, tests
 from redhawk.codegen.jinja.environment import CodegenEnvironment
 from os.path import join, exists, getmtime, dirname
@@ -43,7 +44,7 @@ def modify_resource(py_file, py_name, properties, ports_data):
     count = 0
 
     rm_py = py_file.split(".")[0]
-    template_dir = "/usr/local/redhawk/core/lib/python/redhawk/codegen/jinja/python/component/gr_flowgraph/templates/"
+    template_dir = os.environ['OSSIEHOME'] + "/lib/python/redhawk/codegen/jinja/python/component/gr_flowgraph/templates/"
 
     env = Environment(loader=FileSystemLoader(template_dir))
     rs_file = template_dir + "resource_build.py"
