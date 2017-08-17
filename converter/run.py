@@ -19,6 +19,7 @@ import lib.create_xmls as cx
 import lib.jinja_file_edits as jfe
 from lib.python_formatter import PythonFormatter
 from lib.xml_parsing import XMLParsing
+from lib.grc_to_py import grc_to_py
 
 LOGGER_NAME = "GRComponentConverter"
 
@@ -77,11 +78,10 @@ def main(grc_file, destination, options):
     parsed_grc.create_properties_array()
     parsed_grc.find_inout_types()
 
+    grc_to_py(grc_input, output_dir)
+
     temp_file_name = parsed_grc.python_file_name.rstrip(".py")                  # Defining the names of two temporary files to be created by shell script
     trimmed_file_name = temp_file_name + "_trimmed"
-
-    subprocess.call(["./lib/grc_to_py.sh", grc_input, parsed_grc.python_file_name,
-        output_dir, temp_file_name, trimmed_file_name])
 
     py_path = output_dir + "/" + parsed_grc.python_file_name
     tmp_path = output_dir + "/" + temp_file_name
