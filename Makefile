@@ -30,4 +30,6 @@ install: $(INSTALL_TARGET)
 
 $(INSTALL_TARGET):
 	cp -r $(TARGET_NAME) $(INSTALL_TARGET)
-	
+
+uninstall:
+	rm -rf $(INSTALL_TARGET)
