@@ -2,7 +2,6 @@ import subprocess
 from jinja2 import Environment, FileSystemLoader, PackageLoader, Template, tests
 from redhawk.codegen.jinja.environment import CodegenEnvironment
 from os.path import join, exists, getmtime, dirname
-from redhawk.codegen.jinja.python.component.gr_flowgraph import PullComponentGenerator
 
 def main(py_file, py_name, properties, pd):
     modify_resource(py_file, py_name, properties, pd)
