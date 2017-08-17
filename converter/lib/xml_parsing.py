@@ -25,6 +25,7 @@ class XMLParsing(object):
         self.properties_array = []
         self.first_iteration = True
         self.block_count = -1
+        self.python_class_name = ""
         self.python_file_name = ""
         self.source_types = []
         self.sink_types = []
@@ -87,7 +88,8 @@ class XMLParsing(object):
                   key = param.find('key').text
 
                   if key == "id":
-                      self.python_file_name = param.find('value').text + ".py"
+                      self.python_class_name = param.find('value').text
+                      self.python_file_name = self.python_class_name + ".py"
 
               self.first_iteration = False
 
