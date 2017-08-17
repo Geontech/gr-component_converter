@@ -27,5 +27,7 @@ def grc_to_py(grcfile, outdir):
             ["Validation failed:"] + fg.get_error_messages()
         ))
 
+    if outdir[-1] != '/':
+        outdir += '/'
     gen = platform.get_generator()(fg, outdir)
     gen.write()
