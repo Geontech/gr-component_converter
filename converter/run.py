@@ -16,7 +16,6 @@ import logging
 from optparse import OptionParser, OptionGroup
 
 import lib.create_xmls as cx
-import lib.jinja_file_edits as jfe
 from lib.python_formatter import PythonFormatter
 from lib.xml_parsing import XMLParsing
 from lib.grc_to_py import grc_to_py
@@ -59,10 +58,10 @@ def main(grc_file, destination, options):
         sys.exit(1)
 
     # Extract only the name of the GRC file from the entire absolute path
-    temp = grc_input.rfind("/")
-    grc_name = grc_input[temp+1:]
+    grc_name = os.path.basename(grc_input)
+    (trimmed_grc_name, grc_ext) = os.path.splitext(grc_name)
 
-    if ".grc" not in grc_name:
+    if ".grc" != grc_ext:
         _log.error("A GNU Radio \".grc\" file was expected, but was not provided.")
         sys.exit(1)
 
@@ -102,8 +101,6 @@ def main(grc_file, destination, options):
     pf = PythonFormatter(py_path, tmp_path, trim_path)
     pf.format()
 
-    trimmed_grc_name = grc_name.split(".")[0]
-
     # ##########################################################################
     # This section of code calls the main method of the "create_xmls.py" file
     # which in turn creates the three necessary XML files, and stores the
@@ -114,23 +111,17 @@ def main(grc_file, destination, options):
     # process that moves the "top_block.py" (or similar) file inside the
     # newly generated directory.
     # ##########################################################################
-    respkg = cx.main(
+    resource_package = cx.main(
         name =          trimmed_grc_name,
         output_dir =    output_dir,
-        prop_array =    parsed_grc.properties_array,
-        source_types =  parsed_grc.source_types,
-        sink_types =    parsed_grc.sink_types,
+        parsed_grc =    parsed_grc,
         grc_input =     grc_input,
         docker_image =  options.docker_image,
         docker_volume = options.docker_volume)
 
-    jfe.main(parsed_grc.python_file_name, parsed_grc.python_class_name, trimmed_grc_name, parsed_grc.properties_array, respkg["pd"])
+    resource_package.callCodegen(force=True) #Generates remaining nescessary files
 
-    respkg["rp"].callCodegen(force=True) #Generates remaining nescessary files
-
-    jfe.modify_make_am_ide(respkg["rp"].autotoolsDir, parsed_grc.python_file_name)
-
-    subprocess.call(["mv", py_path, respkg["rp"].autotoolsDir])
+    subprocess.call(["mv", py_path, resource_package.autotoolsDir])
 
 
 

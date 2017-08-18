@@ -2,14 +2,14 @@
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
-# This file is part of REDHAWK core.
+# This file is part of GNURadio REDHAWK.
 #
-# REDHAWK core is free software: you can redistribute it and/or modify it under
+# GNURadio REDHAWK is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option) any
 # later version.
 #
-# REDHAWK core is distributed in the hope that it will be useful, but WITHOUT
+# GNURadio REDHAWK is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
 # details.
@@ -18,28 +18,28 @@
 # along with this program.  If not, see http://www.gnu.org/licenses/.
 #
 
+import re
 from redhawk.codegen import utils
 from redhawk.codegen.jinja.loader import CodegenLoader
 from redhawk.codegen.jinja.common import ShellTemplate, AutomakeTemplate, AutoconfTemplate
-from redhawk.codegen.jinja.python import PythonCodeGenerator, PythonTemplate
+from redhawk.codegen.jinja.python import PythonTemplate
 from redhawk.codegen.jinja.python.properties import PythonPropertyMapper
-from redhawk.codegen.jinja.python.ports import PythonPortMapper, PythonPortFactory
+from redhawk.codegen.jinja.python.ports import PythonPortFactory
 
-from mapping import GrFlowGraphComponentMapper
+from redhawk.codegen.jinja.python.component.pull import PullComponentGenerator
 
-if not '__package__' in locals():
-    # Python 2.4 compatibility
-    __package__ = __name__.rsplit('.', 1)[0]
+from mapping import GrFlowGraphComponentMapper, GrFlowGraphPythonPortMapper
 
 loader = CodegenLoader(__package__,
                        {'common': 'redhawk.codegen.jinja.common',
+                        'pull':   'redhawk.codegen.jinja.python.component.pull',
                         'base':   'redhawk.codegen.jinja.python.component.base'})
 
-class GrFlowGraphComponentGenerator(PythonCodeGenerator):
-    # Need to keep auto_start and queued_ports to handle legacy options
-    def parseopts (self, auto_start=True, queued_ports=False, legacy_structs=True):
-        self.legacy_structs = utils.parseBoolean(legacy_structs)
-
+class GrFlowGraphComponentGenerator(PullComponentGenerator):
+    def map(self, softpkg):
+        component = super(PullComponentGenerator,self).map(softpkg)
+        return component
+        
     def loader(self, component):
         return loader
 
@@ -50,18 +50,18 @@ class GrFlowGraphComponentGenerator(PythonCodeGenerator):
         return PythonPropertyMapper(legacy_structs=self.legacy_structs)
 
     def portMapper(self):
-        return PythonPortMapper()
+        return GrFlowGraphPythonPortMapper()
 
     def portFactory(self):
         return PythonPortFactory()
 
     def templates(self, component):
         templates = [
-            PythonTemplate('resource_base.py', component['baseclass']['file']),
-            PythonTemplate('resource_build.py', component['userclass']['file'], executable=True, userfile=True),
-            AutoconfTemplate('configure.ac'),
+            PythonTemplate('pull/resource_base.py', component['baseclass']['file']),
+            PythonTemplate('resource.py', component['userclass']['file'], executable=True, userfile=True),
+            AutoconfTemplate('pull/configure.ac'),
             AutomakeTemplate('base/Makefile.am'),
-            AutomakeTemplate('base/Makefile.am.ide', userfile=True),
+            AutomakeTemplate('Makefile.am.ide', userfile=True),
             ShellTemplate('common/reconf')
         ]
         return templates
