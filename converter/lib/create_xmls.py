@@ -14,7 +14,7 @@ import textwrap
 import os
 from collections import namedtuple
 from ossie import version
-from ossie.parsers import scd, spd
+from ossie.parsers import scd, spd, prf
 from redhawk.packagegen.resourcePackage import ResourcePackage
 from redhawk.packagegen.softPackage import SoftPackage
 
@@ -95,7 +95,7 @@ def formatSCD(rp, sources, sinks):
 # has been determined to be a property (referenced by another variable or block)
 # and formats the name of the property in a required way.
 # ##############################################################################
-def formatPRF(rp, props):
+def formatPRF(rp, props, docker_image, docker_volumes):
 
     # ##########################################################################
     # I'm not sure how much of a resource difference it would make (probably
@@ -111,6 +111,34 @@ def formatPRF(rp, props):
         rp.addSimpleProperty(id=new_id, value=props[i].value, complex=False, type=props[i].type, kindtypes=["property"])
         rp.prf.simple[i].set_name(new_name)
 
+    def docker_execparam(name, value, description):
+        return prf.simple(
+            id_=name,
+            value=value,
+            type_='string',
+            commandline='true',
+            kind=[prf.kind(kindtype='property')],
+            action=prf.action(type_='external'),
+            description=description)
+
+    # If docker_image is defined, add an exec param __DOCKER_IMAGE__
+    if docker_image:
+        rp.prf.add_simple(docker_execparam(
+            name='__DOCKER_IMAGE__',
+            value=docker_image,
+            description='Docker image containing this Component\'s environment'))
+
+    # If docker_volumes is defined, add an exec param __DOCKER_ARGS__
+    # for "--volumes-from docker_volumes"
+    if docker_volumes:
+        vols = ''
+        for vol in docker_volumes:
+            vols += '--volumes-from %s ' % vol
+        rp.prf.add_simple(docker_execparam(
+            name='__DOCKER_ARGS__',
+            value=vols,
+            description='Docker \'run\' arguments for this Component\'s container'))
+
 # ##############################################################################
 # This section is where we manipulate certain properties of the SPD
 # file before it gets generated, so that it meets the requirements that
@@ -119,7 +147,7 @@ def formatPRF(rp, props):
 # description is generated to tell about the file's date/time of creation and
 # show the GRC file's content MD5sum value.
 # ##############################################################################
-def formatSPD(rp, grc_input, parsed_grc, docker_image, docker_volume):
+def formatSPD(rp, grc_input, parsed_grc, docker_image, docker_volumes):
     new_id = "DCE:" + str(uuid.uuid4())
     rp.spd.set_id(new_id)
     rp.spd.set_type(version.__version__)
@@ -150,7 +178,7 @@ def formatSPD(rp, grc_input, parsed_grc, docker_image, docker_volume):
 
     rp.spd.implementation[0].set_description(description)
 
-    # Add dependencies for docker_image and docker_volume if specified.
+    # Add dependencies for docker_image and docker_volumes if specified.
     deps = []
     if docker_image:
         deps.append(spd.dependency(
@@ -160,8 +188,8 @@ def formatSPD(rp, grc_input, parsed_grc, docker_image, docker_volume):
                 docker_image)
             ))
 
-    if docker_volume:
-        for vol in docker_volume:
+    if docker_volumes:
+        for vol in docker_volumes:
             deps.append(spd.dependency(
                 'allocation',
                 propertyref=spd.propertyRef(
@@ -181,7 +209,7 @@ def formatSPD(rp, grc_input, parsed_grc, docker_image, docker_volume):
 # must occur to the three XML file types before they are generated, so that
 # these files meet our and REDHAWKS criteria for a build.
 # ##############################################################################
-def main(name, output_dir, parsed_grc, grc_input, docker_image, docker_volume):
+def main(name, output_dir, parsed_grc, grc_input, docker_image, docker_volumes):
     implementation = "python"
     generator = "python.component.gr_flowgraph"
 
@@ -192,10 +220,12 @@ def main(name, output_dir, parsed_grc, grc_input, docker_image, docker_volume):
         grc_input=grc_input,
         parsed_grc=parsed_grc,
         docker_image=docker_image,
-        docker_volume=docker_volume)
+        docker_volumes=docker_volumes)
     formatPRF(
         rp=rp,
-        props=parsed_grc.properties_array)
+        props=parsed_grc.properties_array,
+        docker_image=docker_image,
+        docker_volumes=docker_volumes)
     formatSCD(
         rp=rp,
         sources=parsed_grc.source_types,

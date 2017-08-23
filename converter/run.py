@@ -117,7 +117,7 @@ def main(grc_file, destination, options):
         parsed_grc =    parsed_grc,
         grc_input =     grc_input,
         docker_image =  options.docker_image,
-        docker_volume = options.docker_volume)
+        docker_volumes = options.docker_volumes)
 
     resource_package.callCodegen(force=True) #Generates remaining nescessary files
 
@@ -146,8 +146,8 @@ if __name__ == '__main__':
         default=None)
     group.add_option(
         "--docker-volume",
-        help="Docker Volume required by this component (repeat if multiple)",
-        dest="docker_volume",
+        help="Docker Volume(s) required by this component (repeat if multiple)",
+        dest="docker_volumes",
         action="append",
         type="string",
         default=None)
@@ -162,7 +162,7 @@ if __name__ == '__main__':
     _log = logging.getLogger(LOGGER_NAME)
 
     # Validate 
-    if options.docker_volume and not options.docker_image:
+    if options.docker_volumes and not options.docker_image:
         _log.error("If a volume is specified, then an image must be specified.");
         sys.exit(1)
 
