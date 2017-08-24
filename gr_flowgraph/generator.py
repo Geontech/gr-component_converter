@@ -61,10 +61,10 @@ class GrFlowGraphComponentGenerator(PullComponentGenerator):
     def templates(self, component):
         templates = [
             PythonTemplate('pull/resource_base.py', component['baseclass']['file']),
-            PythonTemplate('resource.py', component['userclass']['file'], executable=True, userfile=True),
+            PythonTemplate('resource.py', component['userclass']['file'], executable=True),
             AutoconfTemplate('pull/configure.ac'),
             AutomakeTemplate('base/Makefile.am'),
-            AutomakeTemplate('Makefile.am.ide', userfile=True),
+            AutomakeTemplate('Makefile.am.ide'),
             ShellTemplate('common/reconf')
         ]
 
