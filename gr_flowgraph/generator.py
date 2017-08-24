@@ -35,6 +35,9 @@ loader = CodegenLoader(__package__,
                         'pull':   'redhawk.codegen.jinja.python.component.pull',
                         'base':   'redhawk.codegen.jinja.python.component.base'})
 
+class DockerFileTemplate(ShellTemplate):
+    pass
+
 class GrFlowGraphComponentGenerator(PullComponentGenerator):
     def map(self, softpkg):
         component = super(PullComponentGenerator,self).map(softpkg)
@@ -58,10 +61,20 @@ class GrFlowGraphComponentGenerator(PullComponentGenerator):
     def templates(self, component):
         templates = [
             PythonTemplate('pull/resource_base.py', component['baseclass']['file']),
-            PythonTemplate('resource.py', component['userclass']['file'], executable=True, userfile=True),
+            PythonTemplate('resource.py', component['userclass']['file'], executable=True),
             AutoconfTemplate('pull/configure.ac'),
             AutomakeTemplate('base/Makefile.am'),
-            AutomakeTemplate('Makefile.am.ide', userfile=True),
+            AutomakeTemplate('Makefile.am.ide'),
             ShellTemplate('common/reconf')
         ]
+
+        # If this is a docker-borne Component, add the template generators for it.
+        if component['flowgraph']['docker_image']:
+            templates += [
+                DockerFileTemplate('Dockerfile',
+                    filename='../Dockerfile'),
+                ShellTemplate('build-image.sh',
+                    filename='../build-image.sh',
+                    executable=True)
+            ]
         return templates

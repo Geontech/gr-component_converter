@@ -34,14 +34,23 @@ class GrFlowGraphComponentMapper(PullComponentMapper):
         # Parse the component's description for the flow graph package and class
         # names.  There's only one implementation from our converter tooling.
         the_spd = spd.parse(softpkg.spdFile())
-        impdesc = the_spd.get_implementation()[0].description
+        the_impl = the_spd.get_implementation()[0]
+
+        impdesc = the_impl.description
         fg_file_name  = re.search(FG_KEY_FILE + ':(.+)', impdesc).group(1)
         fg_class_name = re.search(FG_KEY_CLASS_NAME + ':(.+)', impdesc).group(1)
-
         pycomp['flowgraph'] = {
             'file':       fg_file_name,
             'class_name': fg_class_name
         }
+
+        # Search the dependencies for the Docker image dependency
+        fg_docker_image = None    
+        for dep in the_impl.get_dependency():
+            if dep.type_ == 'allocation' and dep.propertyref:
+                if dep.propertyref.refid == 'DCE:c38d28a6-351d-4aa4-a9ba-3cea51966838':
+                    fg_docker_image = dep.propertyref.value
+        pycomp['flowgraph'].update({'docker_image': fg_docker_image})
 
         return pycomp
 
