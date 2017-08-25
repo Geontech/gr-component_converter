@@ -45,11 +45,11 @@
 
     def start(self):
         self.tb_start()
-        ${baseClass}.start()
+        ${baseClass}.start(self)
 
     def stop(self):
         self.tb_stop()
-        ${baseClass}.stop()
+        ${baseClass}.stop(self)
 
 #{% if component.gr_properties|length > 0 %}
     # FIXME: ...One day.  There's no way to populate the contents of 
