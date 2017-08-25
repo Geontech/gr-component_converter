@@ -24,8 +24,18 @@ LABEL name="REDHAWK+GNURadio {{ component.name }} Runtime Container"
 ADD . /root/{{ component.name }}
 RUN printf '\
 . /etc/profile\n\
-mkdir -p $SDRROOT/{{component.sdrpath}}/{{componentdir}}\n\
 mv /root/{{ component.name }} $SDRROOT/{{component.sdrpath}}/{{componentdir}}\n\
 chown -R redhawk:redhawk $SDRROOT\n\
 chmod -R g+ws $SDRROOT\n\
-' | bash
+' | bash && \
+    #
+    # Tweak the entry point to source /etc/profile first
+    #
+    printf '#!/usr/bin/env bash \n\
+. /etc/profile \n\
+exec $@\n\
+' > /entrypoint.sh && \
+    chmod +x /entrypoint.sh
+
+ENTRYPOINT [ "/entrypoint.sh" ]
+WORKDIR /var/redhawk/sdr/dom

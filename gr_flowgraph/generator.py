@@ -40,7 +40,15 @@ class DockerFileTemplate(ShellTemplate):
 
 class GrFlowGraphComponentGenerator(PullComponentGenerator):
     def map(self, softpkg):
-        component = super(PullComponentGenerator,self).map(softpkg)
+        component = super(GrFlowGraphComponentGenerator,self).map(softpkg)
+
+        # Rather than make a propertyMapper class for it, here  we filter the
+        # mapped properties into GNURadio ones.
+        component['gr_properties'] = []
+        for prop in component['properties']:
+            if prop['identifier'].startswith('gr::'):
+                component['gr_properties'].append(prop)
+
         return component
         
     def loader(self, component):
@@ -72,7 +80,8 @@ class GrFlowGraphComponentGenerator(PullComponentGenerator):
         if component['flowgraph']['docker_image']:
             templates += [
                 DockerFileTemplate('Dockerfile',
-                    filename='../Dockerfile'),
+                    filename='../Dockerfile',
+                    executable=False),
                 ShellTemplate('build-image.sh',
                     filename='../build-image.sh',
                     executable=True)
