@@ -18,7 +18,7 @@
 # along with this program.  If not, see http://www.gnu.org/licenses/.
 #
 
-import re
+import re, os
 from redhawk.codegen import utils
 from redhawk.codegen.jinja.loader import CodegenLoader
 from redhawk.codegen.jinja.common import ShellTemplate, AutomakeTemplate, AutoconfTemplate
@@ -48,6 +48,9 @@ class GrFlowGraphComponentGenerator(PullComponentGenerator):
         for prop in component['properties']:
             if prop['identifier'].startswith('gr::'):
                 component['gr_properties'].append(prop)
+
+        # Add SDRROOT pulled from the environment.
+        component['env_sdrroot'] = os.environ['SDRROOT']
 
         return component
         
