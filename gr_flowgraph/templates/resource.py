@@ -51,19 +51,19 @@
         self.tb_stop()
         ${baseClass}.stop()
 
-#{% if component.properties|length > 0 %}
+#{% if component.gr_properties|length > 0 %}
     # FIXME: ...One day.  There's no way to populate the contents of 
     # constructor() automatically, however, Python is very forgiving. 
     # So we're making a second one below the original empty one.  :-)
     def constructor(self):
-#{% for prop in component.properties %}
+#{% for prop in component.gr_properties %}
 #{% set prop_member = prop.identifier|replace("::","_") %}
 #{% set prop_changed = prop_member ~ "_changed" %}
-        self.addPropertyChangelistener("${prop.identifier}", self.${prop_changed})
+        self.addPropertyChangeListener("${prop.identifier}", self.${prop_changed})
         self.${prop_changed}("${prop.identifier}", None, self.${prop_member})
 #{% endfor %}
 
-#{% for prop in component.properties %}
+#{% for prop in component.gr_properties %}
 #{% set prop_member = prop.identifier|replace("::","_") %}
 #{% set prop_changed = prop_member ~ "_changed" %}
 #{% set prop_tb = prop_member|replace("gr_","") %}
