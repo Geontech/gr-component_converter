@@ -72,7 +72,8 @@ class GrFlowGraphComponentGenerator(PullComponentGenerator):
         if component['flowgraph']['docker_image']:
             templates += [
                 DockerFileTemplate('Dockerfile',
-                    filename='../Dockerfile'),
+                    filename='../Dockerfile',
+                    executable=False),
                 ShellTemplate('build-image.sh',
                     filename='../build-image.sh',
                     executable=True)
