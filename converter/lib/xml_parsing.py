@@ -8,29 +8,79 @@
 
 import re
 import sys
-from array import array
 from collections import namedtuple
+import itertools
 import xml.etree.ElementTree as ET
 
-GNUBlock = namedtuple("GNUBlock", "block_type name value label type ref")
 RHBlock = namedtuple("RHBlock", "name type")
+
+class GNUBlock(object):
+    def __init__(self, block_type="", name="", value="", label="", type_="", refs=[]):
+        self.block_type = block_type
+        self.name = name
+        self.value = value
+        self.label = label
+        self.type = type_
+        self.refs = refs
+
+    def __str__(self):
+        return "{0}({1})".format(type(self).__name__, self.__dict__)
+
+    # Returns a GNUBlock instance if the block is enabled.  Otherwise None.
+    @staticmethod
+    def from_xml(block):
+        # Iterate over the block's params
+        block_type = block.find("key").text.lower()
+        name = value = label = type_ = ""
+        refs = []
+        for param in block.findall('param'):
+            param_key = param.find('key').text.lower()
+            param_value = param.find('value').text
+            
+            if param_key == "_enabled" and "true" != param_value.lower():
+                # Skip disabled blocks
+                # EARLY RETURN
+                return None
+            # Map other known keys to fields or treat any unknowns as possible
+            # references to variable IDs (if the key starts with an alpha char)
+            elif param_key == "id":
+                name = param_value
+            elif param_key == "value":
+                value = param_value
+            elif param_key == "label":
+                label = param_value
+            elif param_key == "type":
+                type_ = param_value
+            elif (param_value is not None and 
+                    param_value[0].isalpha() and 
+                    not param_value[0].isdigit() and
+                    param_value.lower() not in ["true", "false"] and
+                    "variable" != block_type):
+                # Basically: something that could be a valid variable name ;-)
+                refs.append(param_value)
+
+        return GNUBlock(
+            block_type=block_type,
+            name=name,
+            value=value,
+            label=label,
+            type_=type_,
+            refs=refs)
+
 
 class XMLParsing(object):
 
     def __init__(self, file_name):
         self.tree = ET.parse(file_name)
         self.root = self.tree.getroot()
-        self.temp_arr = []
-        self.block_array = []
-        self.properties_array = []
-        self.first_iteration = True
-        self.block_count = -1
+        self.block_array = None
+        self.properties_array = None
         self.python_class_name = ""
         self.python_file_name = ""
-        self.source_types = []
-        self.sink_types = []
+        self.source_types = None
+        self.sink_types = None
         self.io_type = ""
-
+        self.__parse()
 
     # ##########################################################################
     # This method is responsible for iterating through the provided XML file and
@@ -41,93 +91,26 @@ class XMLParsing(object):
     # with the value, "None". Then, the array is converted into the namedTuple
     # type "GNUBlock" for easy iteration and will be used to populate xml files.
     # ##########################################################################
-    def parse(self):
+    def __parse(self):
+        # Get the blocks of interest and convert them to GNUBlocks, if enabled.
+        # Note, if the block is not enabled, the factory returns None.
+        xml_blocks = self.root.findall('block')
+        gnublocks = [b for b in (GNUBlock.from_xml(x) for x in xml_blocks) if b]
 
-        for block in self.root.findall('block'):
-          if self.first_iteration == False:                                     # We discount the first "block" that we find when parsing since it contains only "option" information,
+        # Iterate over the blocks and collect them into our sets
+        self.block_array = []
+        for gnublock in gnublocks:
+            # The options block is only used for pulling in the class name.
+            if "options" == gnublock.block_type:
+                self.python_class_name = gnublock.name
+                self.python_file_name = self.python_class_name + ".py"
+                continue
 
-              enabled = True
+            # Store the block
+            self.block_array.append(gnublock)
 
-              gnublk = block.find('key').text                                   # Do not construct the namedTuple object if the GRC file indicates that the specific block is diabled.
-              for param in block.findall('param'):
-                  key = param.find('key').text
-                  if key == "_enabled":
-                      enabled = param.find('value').text
-
-              if enabled == "True":
-
-                  self.block_count += 1
-                  self.temp_arr.append([])
-                  self.temp_arr[self.block_count].append(gnublk)
-
-                  for i in range(0, 5):                                         # Adding blank array positions under each block header for correct insertion of attributes
-                      self.temp_arr[self.block_count].append([])
-
-                  self.temp_arr[self.block_count][5] = None
-
-                  for param in block.findall('param'):
-
-                      key = param.find('key').text
-
-                      if key == "id":
-                          name = param.find('value').text
-                          self.temp_arr[self.block_count][1] = name
-                      elif key == "value" or key == "const":
-                          data = param.find('value').text
-                          self.temp_arr[self.block_count][2] = data
-                      elif key == "label":
-                          label = param.find('value').text
-                          self.temp_arr[self.block_count][3] = label
-                      elif key == "type":
-                          d_type = param.find('value').text
-                          self.temp_arr[self.block_count][4] = d_type
-
-          else:                                                                 # On the first iteration, we only want information about the name of the python file
-              for param in block.findall('param'):                              # that will be created by calling grcc on the respected .grc file (since the two don't always match).
-
-                  key = param.find('key').text
-
-                  if key == "id":
-                      self.python_class_name = param.find('value').text
-                      self.python_file_name = self.python_class_name + ".py"
-
-              self.first_iteration = False
-
-        for i in range(0, len(self.temp_arr)):
-
-            # ##################################################################
-            # TODO: Determine if the assignment statement below is creating
-            #       references or new values. We want new values.
-            # ##################################################################
-            for j in range(0, len(self.temp_arr)):
-                if "variable" in self.temp_arr[i][0] and (self.temp_arr[i][1] ==
-                    self.temp_arr[j][2] or self.temp_arr[i][1] == self.temp_arr[j][5]):
-
-                    self.temp_arr[i][4] = self.temp_arr[j][4]
-
-                if self.temp_arr[i][2] == self.temp_arr[j][1]:
-                    self.temp_arr[i][2] = self.temp_arr[j][2]
-                    self.temp_arr[i][5] = self.temp_arr[j][1]
-
-
-                    # ##########################################################
-                    # Optional numpy implementation if we end up not wanting
-                    # to be assigning pointers, but copied values instead.
-                    #
-                    # self.temp_arr[i][2] = np.array(self.temp_arr)[[j], [2]]
-                    # self.temp_arr[i][5] = np.array(self.temp_arr)[[j], [1]]
-                    # ##########################################################
-
-            for k in range(0, len(self.temp_arr[j])):
-                if not self.temp_arr[i][k]:                                     # Replace empty list indexes ([]) with the None value
-                    self.temp_arr[i][k] = None
-
-            gnub = GNUBlock(block_type=self.temp_arr[i][0],                     # Constructing the namedTuple "GNUBlock" (defined above) from our created array
-                name=self.temp_arr[i][1], value=self.temp_arr[i][2],
-                label=self.temp_arr[i][3], type=self.temp_arr[i][4],
-                ref=self.temp_arr[i][5])
-
-            self.block_array.append(gnub)
+        self.__create_properties_array()
+        self.__find_inout_types()
 
     # ##########################################################################
     # In this method, the namedTuple array (created by the above parse() method)
@@ -139,20 +122,19 @@ class XMLParsing(object):
     # properties_array class variable for later use in generating
     # SimpleProperties for the generated PRF file.
     #
-    # TODO: Determine if a sixth property should be added to the namedTuple to
-    #       display a list of blocks that reference the current.
-    #
     # TODO: Determine if we need to account for nested references of variable.
     #       I assume that we will need to...
     # ##########################################################################
-    def create_properties_array(self):
-
-        for block in self.block_array:
-            if "variable" in block.block_type:
-
-                for copy_block in self.block_array:
-                    if copy_block.ref != None and block.name in copy_block.ref:
-                        self.properties_array.append(block)
+    def __create_properties_array(self):
+        self.properties_array = []
+        for A, B in itertools.combinations(self.block_array, 2):
+            if "variable" in A.block_type:
+                if A.name in B.refs:
+                    A.type = B.type
+                    self.properties_array.append(A)
+                if B.name in A.refs:
+                    B.type = A.type
+                    self.properties_array.append(B)
 
     # ##########################################################################
     # This method iterates through the current object's created "block_array"
@@ -161,17 +143,10 @@ class XMLParsing(object):
     # class list (in case of multiple instances). The new list is then analyzed
     # to determine the input/output "type" of the user's flowgraph and if the
     # provided flowgraph meets one input/output requirement.
-    #
-    # TODO: Determine if multiple REDHAWK sink blocks are valid. # YES
-    #
-    # TODO: How do we account for blocks that exist, and make connections in
-    #       the user's passed FG, but may be currently "disabled". # Look at GRC
-    #
-    # TODO: In regards to above, should we give users the opportunity to
-    #       enable and disable blocks on the fly? # No
     # ##########################################################################
-    def find_inout_types(self):
-
+    def __find_inout_types(self):
+        self.source_types = []
+        self.sink_types = []
         for block in self.block_array:
             if "redhawk_integration_redhawk_source" == block.block_type:
                 self.source_types.append(RHBlock(name=block.name, type=block.type))
@@ -196,10 +171,6 @@ class XMLParsing(object):
     # ##########################################################################
     def testing(self):
 
-        self.parse()
-        self.create_properties_array()
-        self.find_inout_types()
-
         f = open("testing_output.txt", "w")
         f.write("Output from iterating over current objects \"block_array\": \n")
 
@@ -222,7 +193,6 @@ class XMLParsing(object):
                 f.write(str(item) + "\n")
 
         if self.io_type:
-            f.write("\nInput/output type of flow graph: ")
-            f.write(self.io_type)
+            f.write("\nInput/output type of flow graph: %s\n" % self.io_type)
 
         f.close()

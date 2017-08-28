@@ -73,9 +73,6 @@ def main(grc_file, destination, options):
     # ##########################################################################
 
     parsed_grc = XMLParsing(grc_input)
-    parsed_grc.parse()
-    parsed_grc.create_properties_array()
-    parsed_grc.find_inout_types()
 
     # Generates output_dir/<parsed_grc.python_file_name>.py
     # which may eventually conflict with the base class file name in the 
