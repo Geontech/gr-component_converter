@@ -12,7 +12,7 @@ from collections import namedtuple
 import itertools
 import xml.etree.ElementTree as ET
 
-RHBlock = namedtuple("RHBlock", "name type")
+RHBlock = namedtuple("RHBlock", "name type direction")
 
 class GNUBlock(object):
     def __init__(self, block_type="", name="", value="", label="", type_="", refs=[]):
@@ -77,9 +77,7 @@ class XMLParsing(object):
         self.properties_array = None
         self.python_class_name = ""
         self.python_file_name = ""
-        self.source_types = None
-        self.sink_types = None
-        self.io_type = ""
+        self.ports_array = None
         self.__parse()
 
     # ##########################################################################
@@ -146,22 +144,19 @@ class XMLParsing(object):
     # provided flowgraph meets one input/output requirement.
     # ##########################################################################
     def __find_inout_types(self):
-        self.source_types = []
-        self.sink_types = []
+        integ_prefix = "redhawk_integration_redhawk_"
+        self.ports_array = []
         for block in self.block_array:
-            if "redhawk_integration_redhawk_source" == block.block_type:
-                self.source_types.append(RHBlock(name=block.name, type=block.type))
-            elif "redhawk_integration_redhawk_sink" == block.block_type:
-                self.sink_types.append(RHBlock(name=block.name, type=block.type))
-
-        if not self.source_types and not self.sink_types:
+            if block.block_type.startswith(integ_prefix):
+                self.ports_array.append(
+                    RHBlock(
+                        name=block.name,
+                        type=block.type,
+                        direction=block.block_type.replace(integ_prefix,'')
+                        )
+                    )        
+        if not self.ports_array:
             sys.exit("No REDHAWK source or sink block provided. Exiting.")
-        elif not self.source_types:
-            self.io_type = "sink only"
-        elif not self.sink_types:
-            self.io_type = "source only"
-        else:
-            self.io_type = "source and sink"
 
     # ##########################################################################
     # This method was added to provide quick testing capabilities for data
@@ -183,17 +178,9 @@ class XMLParsing(object):
             for block in self.properties_array:
                 f.write(str(block) + "\n")
 
-        if self.source_types:
-            f.write("\nContents of \"source_types\" list: \n")
-            for item in self.source_types:
+        if self.ports_array:
+            f.write("\nContents of \"ports_array\" list: \n")
+            for item in self.ports_array:
                 f.write(str(item) + "\n")
-
-        if self.sink_types:
-            f.write("\nContents of \"sink_types\" list: \n")
-            for item in self.sink_types:
-                f.write(str(item) + "\n")
-
-        if self.io_type:
-            f.write("\nInput/output type of flow graph: %s\n" % self.io_type)
 
         f.close()

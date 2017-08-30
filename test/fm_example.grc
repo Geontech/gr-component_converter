@@ -477,7 +477,7 @@
     </param>
     <param>
       <key>id</key>
-      <value>redhawk_integration_redhawk_sink_0</value>
+      <value>audio_out</value>
     </param>
     <param>
       <key>type</key>
@@ -512,7 +512,7 @@
     </param>
     <param>
       <key>id</key>
-      <value>redhawk_integration_redhawk_source_0</value>
+      <value>complex_in</value>
     </param>
     <param>
       <key>maxoutbuf</key>
@@ -539,7 +539,7 @@
   </connection>
   <connection>
     <source_block_id>blocks_multiply_const_vxx_0</source_block_id>
-    <sink_block_id>redhawk_integration_redhawk_sink_0</sink_block_id>
+    <sink_block_id>audio_out</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>
@@ -562,7 +562,7 @@
     <sink_key>0</sink_key>
   </connection>
   <connection>
-    <source_block_id>redhawk_integration_redhawk_source_0</source_block_id>
+    <source_block_id>complex_in</source_block_id>
     <sink_block_id>blocks_throttle_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>

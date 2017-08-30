@@ -63,8 +63,12 @@ def fg_snake_case_port(name):
 class GrFlowGraphPythonPortMapper(PythonPortMapper):
     def _mapPort(self, port, generator):
         pyport = PythonPortMapper._mapPort(self, port, generator)
-        fg_member = port.description()
-        fg_name = fg_snake_case_port(port.name())
+        fg_member = port.name()
+        fg_name = fg_snake_case_port(generator.interface)
+        if generator.direction == 'provides':
+            fg_name += "_in"
+        else:
+            fg_name += "_out"
 
         pyport['flowgraph'] = {
             'member': fg_member,
