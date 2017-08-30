@@ -67,6 +67,33 @@ class GNUBlock(object):
             type_=type_,
             refs=refs)
 
+# TODO: Devise a better way to determine what the value "is", as a string-named
+# type that would be appropriate for the ResourcePackager later since type 
+# information is not available on the Flow Graph variable blocks.
+__NUMERIC_TYPE_MAP = {
+    int: 'long',
+    long: 'long',
+    float: 'float'
+}
+def string_to_value_type(value):
+    type_ = None
+    if type(value) != str:
+        type_ = __NUMERIC_TYPE_MAP.get(type(value), 'double')
+        value = value
+    elif value.lower() == 'true':
+        type_ = 'boolean'
+        value = True
+    elif value.lower() == 'false':
+        type_ = 'boolean'
+        value = False
+    elif len([c for c in value if c.isalpha()]) > 1:
+        # Has several alphabet characters, treat it like a string.
+        type_ = 'string'
+    else:
+        # Hopefully this is a number in a string...
+        value = eval(value, {"__builtins__":None})
+        type_ = __NUMERIC_TYPE_MAP.get(type(value), 'double')
+    return (value, type_)
 
 class XMLParsing(object):
 
@@ -128,10 +155,10 @@ class XMLParsing(object):
         for A, B in itertools.combinations(self.block_array, 2):
             if "variable" in A.block_type:
                 if A.name in B.refs:
-                    A.type = B.type
+                    (A.value, A.type) = string_to_value_type(A.value)
                     temp.add(A)
                 if B.name in A.refs:
-                    B.type = A.type
+                    (B.value, B.type) = string_to_value_type(B.value)
                     temp.add(B)
         self.properties_array = list(temp)
 
