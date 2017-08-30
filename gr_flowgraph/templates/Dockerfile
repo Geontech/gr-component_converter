@@ -38,4 +38,4 @@ exec $@\n\
     chmod +x /entrypoint.sh
 
 ENTRYPOINT [ "/entrypoint.sh" ]
-WORKDIR {{component.env_sdrroot}}
+WORKDIR {{component.env_sdrroot}}/dom
