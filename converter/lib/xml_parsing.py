@@ -126,15 +126,16 @@ class XMLParsing(object):
     #       I assume that we will need to...
     # ##########################################################################
     def __create_properties_array(self):
-        self.properties_array = []
+        temp = set()
         for A, B in itertools.combinations(self.block_array, 2):
             if "variable" in A.block_type:
                 if A.name in B.refs:
                     A.type = B.type
-                    self.properties_array.append(A)
+                    temp.add(A)
                 if B.name in A.refs:
                     B.type = A.type
-                    self.properties_array.append(B)
+                    temp.add(B)
+        self.properties_array = list(temp)
 
     # ##########################################################################
     # This method iterates through the current object's created "block_array"

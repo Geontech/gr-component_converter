@@ -22,6 +22,14 @@ from redhawk.codegen.jinja.python.component.gr_flowgraph.mapping import FG_KEY_F
 
 SInterface = namedtuple("SInterface", "name id inherits")
 
+BLOCK_TO_BULKIO_MAP = {
+    "float":    "dataFloat",
+    "complex":  "dataFloat",
+    "int":      "dataLong",
+    "short":    "dataShort",
+    "byte":     "dataChar"
+}
+
 # ##############################################################################
 # Optionally, this method will manually add the interfaces, inheritedInterfaces,
 # and supported interfaces that are present within generated SCD files from
@@ -60,7 +68,9 @@ def formatSCD(rp, sources, sinks):
 
     for idx, block in enumerate(sources):
 
-        data_type = "data" + str(block.type).capitalize()
+        data_type = BLOCK_TO_BULKIO_MAP.get(block.type)
+        if data_type is None:
+            raise Exception("Unknown source block data type: %s" % block.type)
 
         if len(sources) > 1:
             new_name = data_type + "_%s_in" % (idx + 1)
@@ -75,7 +85,9 @@ def formatSCD(rp, sources, sinks):
 
     for idx, block in enumerate(sinks):
 
-        data_type = "data" + str(block.type).capitalize()
+        data_type = BLOCK_TO_BULKIO_MAP.get(block.type)
+        if data_type is None:
+            raise Exception("Unknown sink block data type: %s" % block.type)
 
         if len(sinks) > 1:
             new_name = data_type + "_%s_out" % (idx + 1)
