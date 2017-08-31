@@ -86,7 +86,7 @@ def string_to_value_type(value):
     elif value.lower() == 'false':
         type_ = 'boolean'
         value = False
-    elif len([c for c in value if c.isalpha()]) > 1:
+    elif len([c for c in value if c.isalpha()]) > 1 or len(value) == 0:
         # Has several alphabet characters, treat it like a string.
         type_ = 'string'
     else:
