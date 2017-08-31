@@ -153,18 +153,21 @@ class XMLParsing(object):
     # SimpleProperties for the generated PRF file.
     # ##########################################################################
     def __create_properties_array(self):
-        def var_ref_var_filter(block):
+        def var_type_and_ref_check(block):
             (block.value, block.type) = string_to_value_type(block.value)
-            return any([v for v in self.variable_names if v in block.value])
+            if 'string' == block.type:
+                return any([v for v in self.variable_names if v in block.value])
+            else:
+                return false
 
         temp = set()
         for A, B in itertools.combinations(self.block_array, 2):
             if "variable" in A.block_type:
                 if A.name in B.refs:
-                    if not var_ref_var_filter(A):
+                    if not var_type_and_ref_check(A):
                         temp.add(A)
                 if B.name in A.refs:
-                    if not var_ref_var_filter(B):
+                    if not var_type_and_ref_check(B):
                         temp.add(B)
         self.properties_array = list(temp)
 
