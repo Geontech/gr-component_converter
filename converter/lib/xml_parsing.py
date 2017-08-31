@@ -105,6 +105,7 @@ class XMLParsing(object):
         self.python_class_name = ""
         self.python_file_name = ""
         self.ports_array = None
+        self.variable_names = None
         self.__parse()
 
     # ##########################################################################
@@ -124,12 +125,16 @@ class XMLParsing(object):
 
         # Iterate over the blocks and collect them into our sets
         self.block_array = []
+        self.variable_names = []
         for gnublock in gnublocks:
             # The options block is only used for pulling in the class name.
             if "options" == gnublock.block_type:
                 self.python_class_name = gnublock.name
                 self.python_file_name = self.python_class_name + ".py"
                 continue
+
+            if "variable" == gnublock.block_type:
+                self.variable_names.append(gnublock.name)
 
             # Store the block
             self.block_array.append(gnublock)
@@ -146,20 +151,21 @@ class XMLParsing(object):
     # found to be referenced by another block, it is added to the
     # properties_array class variable for later use in generating
     # SimpleProperties for the generated PRF file.
-    #
-    # TODO: Determine if we need to account for nested references of variable.
-    #       I assume that we will need to...
     # ##########################################################################
     def __create_properties_array(self):
+        def var_ref_var_filter(block):
+            (block.value, block.type) = string_to_value_type(block.value)
+            return any([v for v in self.variable_names if v in block.value])
+
         temp = set()
         for A, B in itertools.combinations(self.block_array, 2):
             if "variable" in A.block_type:
                 if A.name in B.refs:
-                    (A.value, A.type) = string_to_value_type(A.value)
-                    temp.add(A)
+                    if not var_ref_var_filter(A):
+                        temp.add(A)
                 if B.name in A.refs:
-                    (B.value, B.type) = string_to_value_type(B.value)
-                    temp.add(B)
+                    if not var_ref_var_filter(B):
+                        temp.add(B)
         self.properties_array = list(temp)
 
     # ##########################################################################
