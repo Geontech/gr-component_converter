@@ -158,7 +158,7 @@ class XMLParsing(object):
             if 'string' == block.type:
                 return any([v for v in self.variable_names if v in block.value])
             else:
-                return false
+                return False
 
         temp = set()
         for A, B in itertools.combinations(self.block_array, 2):
