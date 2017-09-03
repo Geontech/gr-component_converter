@@ -51,13 +51,11 @@ class GNUBlock(object):
                 label = param_value
             elif param_key == "type":
                 type_ = param_value
-            elif (param_value is not None and 
-                    param_value[0].isalpha() and 
-                    not param_value[0].isdigit() and
+            elif (param_value is not None and
                     param_value.lower() not in ["true", "false"] and
                     "variable" != block_type):
                 # Basically: something that could be a valid variable name ;-)
-                refs.append(param_value)
+                refs += re.findall(r'([a-zA-Z][\w\d]*)', param_value)
 
         return GNUBlock(
             block_type=block_type,
