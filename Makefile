@@ -20,6 +20,7 @@
 .PHONY: install
 
 # Location of the python component template(s)
+OSSIEHOME := $(shell bash -c ". /etc/profile; env | grep -Po '(?<=OSSIEHOME=).+'")
 PY_COMP_DIR := $(OSSIEHOME)/lib/python/redhawk/codegen/jinja/python/component
 
 # Installation location
