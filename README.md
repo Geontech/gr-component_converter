@@ -36,6 +36,8 @@ Assuming your Flow Graph has been configured to [meet the requirements](#flow-gr
 
 The location where to store the Component definition is optional; its default is the current working directory.
 
+ > **Pybombs Users:** Source your `setup_env.sh` script before running the converter as it requires `PYTHON_PATH` to include your GNURadio installation.
+
 ## Deployment
 
 You can then deploy (install) the Component to the `SDRROOT` as one would any typical REDHAWK Component:
