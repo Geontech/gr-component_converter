@@ -31,7 +31,7 @@ This will load the template into the `OSSIEHOME` Python package for the REDHAWK 
 Assuming your Flow Graph has been configured to [meet the requirements](#flow-graph-requirements), conversion to a REDHAWK Component project is a single step:
 
 ```
-./run.py ./path_to/my_flowgraph.grc [./path_to_component]
+./converter/run.py ./path_to/my_flowgraph.grc [./path_to_component]
 ```
 
 The location where to store the Component definition is optional; its default is the current working directory.
