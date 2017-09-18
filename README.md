@@ -12,8 +12,8 @@ This tool ingests a GNURadio Flow Graph (GRC XML) and outputs a custom REHDAWK C
 
 This tool requires that all of the following be installed wherever this tool is run:
 
- 1. REDHAWK SDR
- 2. GNURadio
+ 1. REDHAWK SDR 2.0.6
+ 2. GNURadio 3.7.9
  3. [GNURadio REDHAWK Integration Python][gr-rip]
 
 ## Installation
@@ -31,10 +31,12 @@ This will load the template into the `OSSIEHOME` Python package for the REDHAWK 
 Assuming your Flow Graph has been configured to [meet the requirements](#flow-graph-requirements), conversion to a REDHAWK Component project is a single step:
 
 ```
-./run.py ./path_to/my_flowgraph.grc [./path_to_component]
+./converter/run.py ./path_to/my_flowgraph.grc [./path_to_component]
 ```
 
 The location where to store the Component definition is optional; its default is the current working directory.
+
+ > **Pybombs Users:** Source your `setup_env.sh` script before running the converter as it requires `PYTHON_PATH` to include your GNURadio installation.
 
 ## Deployment
 
