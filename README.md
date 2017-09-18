@@ -12,8 +12,8 @@ This tool ingests a GNURadio Flow Graph (GRC XML) and outputs a custom REHDAWK C
 
 This tool requires that all of the following be installed wherever this tool is run:
 
- 1. REDHAWK SDR
- 2. GNURadio
+ 1. REDHAWK SDR 2.0.6
+ 2. GNURadio 3.7.9
  3. [GNURadio REDHAWK Integration Python][gr-rip]
 
 ## Installation
