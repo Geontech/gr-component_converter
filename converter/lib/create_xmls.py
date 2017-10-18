@@ -27,7 +27,7 @@ BLOCK_TO_BULKIO_MAP = {
     "complex":  "dataFloat",
     "int":      "dataLong",
     "short":    "dataShort",
-    "byte":     "dataChar"
+    "byte":     "dataOctet"
 }
 
 # ##############################################################################
@@ -51,39 +51,46 @@ def formatSCD(rp, ports):
     for si in supports_list:
         all_interfaces.add_interface(scd.interface(si.name, si.id, si.inherits))
         sup_interfaces.add_supportsinterface(scd.supportsInterface(si.name, si.id))
-
-    all_interfaces.add_interface(scd.interface("dataShort", "IDL:BULKIO/dataShort:1.0", [scd.inheritsInterface("IDL:BULKIO/ProvidesPortStatisticsProvider:1.0"), scd.inheritsInterface("IDL:BULKIO/updateSRI:1.0")]))
-
+        
     for interface in all_interfaces.get_interface():
         if "Resource" in interface.name:
             interface.add_inheritsinterface(scd.inheritsInterface("IDL:CF/Logging:1.0"))
 
-    rp.scd.set_interfaces(all_interfaces)
     rp.scd.set_componentfeatures(sup_interfaces)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     ports_scd = rp.scd.componentfeatures.get_ports()
     if ports_scd is None:
         ports_scd = scd.ports()
-
+    
+    all_data_types = set()
     for port in ports:
         data_type = BLOCK_TO_BULKIO_MAP.get(port.type)
+        
         if data_type is None:
             raise Exception("Unknown source block data type: %s" % port.type)
 
         repid = "IDL:BULKIO/%s:1.0" % data_type
 
         if port.direction.endswith('source'):
+            all_data_types.add((data_type, 'Provides'))
             ports_scd.add_provides(scd.provides(
                 providesname=port.name,
                 repid=repid))
         elif port.direction.endswith('sink'):
+            all_data_types.add((data_type, 'Uses'))
             ports_scd.add_uses(scd.uses(
                 usesname=port.name,
                 repid=repid))
         else:
             raise Exception("Unknown block port direction: %s" % port.type)
+    
+    for dt in all_data_types:
+        all_interfaces.add_interface(scd.interface(dt[0], "IDL:BULKIO/{0}:1.0".format(dt[0]), [
+            scd.inheritsInterface("IDL:BULKIO/{0}PortStatisticsProvider:1.0".format(dt[1]), 
+            scd.inheritsInterface("IDL:BULKIO/updateSRI:1.0")
+        ]))
 
+    rp.scd.set_interfaces(all_interfaces)
     rp.scd.componentfeatures.set_ports(ports_scd)
 
 # ##############################################################################
