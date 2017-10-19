@@ -87,11 +87,11 @@ def formatSCD(rp, ports):
     for dt in all_data_types:
         if dt[1] == "Provides":
             all_interfaces.add_interface(scd.interface(dt[0], "IDL:BULKIO/{0}:1.0".format(dt[0]), [
-                scd.inheritsInterface("IDL:BULKIO/{0}PortStatisticsProvider:1.0".format(dt[1]), 
+                scd.inheritsInterface("IDL:BULKIO/{0}PortStatisticsProvider:1.0".format(dt[1])), 
                 scd.inheritsInterface("IDL:BULKIO/updateSRI:1.0")]))
         else:
             all_interfaces.add_interface(scd.interface(dt[0], "IDL:BULKIO/{0}:1.0".format(dt[0])))
-
+    
     rp.scd.set_interfaces(all_interfaces)
     rp.scd.componentfeatures.set_ports(ports_scd)
 
