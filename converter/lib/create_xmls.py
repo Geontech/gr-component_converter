@@ -39,33 +39,30 @@ BLOCK_TO_BULKIO_MAP = {
 def formatSCD(rp, ports):
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    supports_list = [SInterface(name="PropertyEmitter", id="IDL:CF/PropertyEmitter:1.0", inherits=[scd.inheritsInterface("IDL:CF/PropertySet:1.0")]),
+    supports_list = [
+        SInterface(name="PropertyEmitter", id="IDL:CF/PropertyEmitter:1.0", inherits=[scd.inheritsInterface("IDL:CF/PropertySet:1.0")]),
         SInterface(name="PortSet", id="IDL:CF/PortSet:1.0", inherits=[scd.inheritsInterface("IDL:CF/PortSupplier:1.0")]),
         SInterface(name="Logging", id="IDL:CF/Logging:1.0", inherits=[scd.inheritsInterface("IDL:CF/LogEventConsumer:1.0"), scd.inheritsInterface("IDL:CF/LogConfiguration:1.0")]),
         SInterface(name="LogEventConsumer", id="IDL:CF/LogEventConsumer:1.0", inherits=None),
-        SInterface(name="LogConfiguration", id="IDL:CF/LogConfiguration:1.0", inherits=None)]
+        SInterface(name="LogConfiguration", id="IDL:CF/LogConfiguration:1.0", inherits=None)
+    ]
 
     all_interfaces = rp.scd.get_interfaces()
     sup_interfaces = rp.scd.get_componentfeatures()
 
     for si in supports_list:
-        all_interfaces.add_interface(scd.interface(si.name, si.id, si.inherits))
-        sup_interfaces.add_supportsinterface(scd.supportsInterface(si.name, si.id))
-
-    all_interfaces.add_interface(scd.interface("dataShort", "IDL:BULKIO/dataShort:1.0", [scd.inheritsInterface("IDL:BULKIO/ProvidesPortStatisticsProvider:1.0"), scd.inheritsInterface("IDL:BULKIO/updateSRI:1.0")]))
+        all_interfaces.add_interface(scd.interface(repid=si.id, name=si.name, inheritsinterface=si.inherits))
+        sup_interfaces.add_supportsinterface(scd.supportsInterface(repid=si.id, supportsname=si.name))
 
     for interface in all_interfaces.get_interface():
         if "Resource" in interface.name:
             interface.add_inheritsinterface(scd.inheritsInterface("IDL:CF/Logging:1.0"))
 
-    rp.scd.set_interfaces(all_interfaces)
-    rp.scd.set_componentfeatures(sup_interfaces)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
     ports_scd = rp.scd.componentfeatures.get_ports()
     if ports_scd is None:
         ports_scd = scd.ports()
 
+    port_data_types = {}
     for port in ports:
         data_type = BLOCK_TO_BULKIO_MAP.get(port.type)
         if data_type is None:
@@ -73,17 +70,32 @@ def formatSCD(rp, ports):
 
         repid = "IDL:BULKIO/%s:1.0" % data_type
 
-        if port.direction.endswith('source'):
+        if port.direction.startswith('source'):
             ports_scd.add_provides(scd.provides(
                 providesname=port.name,
                 repid=repid))
-        elif port.direction.endswith('sink'):
+        elif port.direction.startswith('sink'):
             ports_scd.add_uses(scd.uses(
                 usesname=port.name,
                 repid=repid))
         else:
-            raise Exception("Unknown block port direction: %s" % port.type)
+            raise Exception("Unknown block port direction: %s" % port.direction)
 
+        port_data_types[data_type] = repid
+
+    for name,repid in port_data_types.items():
+        all_interfaces.add_interface(
+            scd.interface(
+                repid=repid,
+                name=name,
+                inheritsinterface=[
+                    scd.inheritsInterface("IDL:BULKIO/ProvidesPortStatisticsProvider:1.0"),
+                    scd.inheritsInterface("IDL:BULKIO/updateSRI:1.0")
+                ]
+            )
+        )
+    rp.scd.set_interfaces(all_interfaces)
+    rp.scd.set_componentfeatures(sup_interfaces)
     rp.scd.componentfeatures.set_ports(ports_scd)
 
 # ##############################################################################
@@ -208,7 +220,14 @@ def main(name, output_dir, parsed_grc, grc_input, docker_image, docker_volumes):
     implementation = "python"
     generator = "python.component.gr_flowgraph"
 
-    rp = ResourcePackage(name, implementation, output_dir, generator)
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    spd_xml = dir_path+'/templates/resourceTemplate.spd.xml'
+    prf_xml = dir_path+'/templates/resourceTemplate.prf.xml'
+    scd_xml = dir_path+'/templates/resourceTemplate.scd.xml'
+    rp = ResourcePackage(name, implementation, output_dir, generator,
+        spdTemplateFile=spd_xml,
+        scdTemplateFile=scd_xml,
+        prfTemplateFile=prf_xml)
 
     formatSPD(
         rp=rp,
