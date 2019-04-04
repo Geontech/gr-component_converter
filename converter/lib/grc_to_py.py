@@ -1,8 +1,16 @@
 import os
-from gnuradio.grc.python.Platform import Platform
+from gnuradio import gr
+try:
+    from grc.core.Platform import Platform
+except ImportError:
+    from gnuradio.grc.core.Platform import Platform
 
 def grc_to_py(grcfile, outdir):
-    platform = Platform()
+    platform = Platform(
+        prefs_file=gr.prefs(),
+        version=gr.version(),
+        version_parts=(gr.major_version(), gr.api_version(), gr.minor_version())
+    )
     data = platform.parse_flow_graph(grcfile)
 
     # Clean out the QT GUI, etc.
@@ -29,5 +37,5 @@ def grc_to_py(grcfile, outdir):
 
     if outdir[-1] != '/':
         outdir += '/'
-    gen = platform.get_generator()(fg, outdir)
+    gen = platform.Generator(fg, outdir)
     gen.write()
