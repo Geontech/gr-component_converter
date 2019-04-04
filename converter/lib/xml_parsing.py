@@ -178,7 +178,7 @@ class XMLParsing(object):
     # provided flowgraph meets one input/output requirement.
     # ##########################################################################
     def __find_inout_types(self):
-        integ_prefix = "redhawk_integration_redhawk_"
+        integ_prefix = "redhawk_integration_rh_"
         self.ports_array = []
         for block in self.block_array:
             if block.block_type.startswith(integ_prefix):
