@@ -85,11 +85,15 @@
             self.tb_is_started = False
 
     def getPort(self, name):
+        obj_id = ''
 #{% for port in component.ports %}
         if name == "${port.name}":
-            return self.tb.${port.flowgraph.member}.getPort("${port.flowgraph.name}")
+            obj_id = self.tb.${port.flowgraph.member}.getPort()
 #{% endfor %}
-        return None
+        if len(obj_id) == 0:
+            raise CF.PortSupplier.UnknownPort()
+        else:
+            return self._default_POA().id_to_reference(obj_id)
 
 #{% endblock %}
 
