@@ -54,8 +54,9 @@ def main(grc_file, destination, options):
         _log.error("Provided file does not exist.")
         sys.exit(1)
     elif not output_dir_exists:
-        _log.error("Provided output directory does not exist.")
-        sys.exit(1)
+        _log.info("Provided output directory does not exist. Attempting to create new output directory...")
+        os.makedirs(output_dir)
+        #sys.exit(1)
 
     # Extract only the name of the GRC file from the entire absolute path
     grc_name = os.path.basename(grc_input)
